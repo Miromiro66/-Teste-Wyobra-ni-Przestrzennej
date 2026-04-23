@@ -161,6 +161,26 @@
         }
         select:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(77, 93, 255, 0.3); }
 
+        /* Styl dla inputa numerycznego (ilość do usunięcia) */
+        input[type="number"] {
+            width: 60px;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--panel-border);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            text-align: center;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        input[type="number"]:focus {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.3);
+        }
+
         /* Wyrównanie dla pickerów kolorów i checkboxa by były w poziomie z etykietą */
         .inline-control {
             display: flex;
@@ -474,6 +494,17 @@
 
                 <div class="separator"></div>
 
+                <!-- NOWOŚĆ: Losowe usuwanie -->
+                <div class="inline-control">
+                    <span class="count-title" title="Usuwa wybraną ilość modułów w jednym spójnym kawałku (obok siebie)">Losowe wycięcie</span>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <input type="number" id="randomRemoveCount" min="1" value="10" title="Ilość do usunięcia">
+                        <button id="randomRemoveBtn" style="padding: 8px 12px; margin: 0; width: auto; font-size: 0.8rem; background-color: rgba(255, 77, 77, 0.15); border-color: var(--accent-red); color: white;">Usuń</button>
+                    </div>
+                </div>
+
+                <div class="separator"></div>
+
                 <div id="blockCountPanel">
                     <span class="count-title">Stan Modułów</span>
                     <div id="blockCount">
@@ -514,6 +545,7 @@
                 <li><strong>Dodaj Moduł:</strong> Kliknij na puste pole lub ścianę istniejącego klocka, aby dobudować nowy moduł w wybranym kolorze.</li>
                 <li><strong>Usuń Moduł:</strong> Kliknij na dowolny klocek stacji, aby go zdemontować.</li>
                 <li><strong>Widoczność Siatki:</strong> Włącza lub wyłącza linie pomocnicze (przydatne do podziwiania gotowego modelu).</li>
+                <li><strong>Losowe Wycięcie:</strong> Wpisz ilość klocków i kliknij "Usuń", by błyskawicznie usunąć spójną grupę klocków (tworząc wyrwę/brakujący kawałek jak w klasycznych testach przestrzennych).</li>
                 <li><strong>Drukuj Projekt:</strong> Tworzy idealnie dopasowany do kartki, płaski zrzut ekranu (na białym tle), z siatką lub bez.</li>
             </ul>
         </div>
@@ -669,6 +701,7 @@
             setupGridColorPicker();
             setupBlockColorPicker();
             setupModal();
+            setupRandomRemove();
             
             // Ustawienie nasłuchiwacza na checkbox widoczności siatki
             const showGridCheckbox = document.getElementById('showGridCheckbox');
@@ -699,6 +732,66 @@
             // Zamykanie modali kliknięciem w ciemne tło poza oknem
             window.addEventListener('click', (e) => {
                 if(e.target === helpModal) helpModal.style.display = 'none';
+            });
+        }
+
+        function setupRandomRemove() {
+            const randomRemoveBtn = document.getElementById('randomRemoveBtn');
+            const randomRemoveCount = document.getElementById('randomRemoveCount');
+
+            randomRemoveBtn.addEventListener('click', () => {
+                let count = parseInt(randomRemoveCount.value, 10);
+                
+                // Zabezpieczenia
+                if (isNaN(count) || count <= 0 || allBlocks.length === 0) return;
+                
+                count = Math.min(count, allBlocks.length);
+                
+                // 1. Wybierz losowy klocek startowy
+                const startIndex = Math.floor(Math.random() * allBlocks.length);
+                const startBlock = allBlocks[startIndex];
+                const startPos = startBlock.userData.gridPos;
+
+                // 2. Inicjalizacja poszukiwań "sąsiadów"
+                const frontier = [startPos];
+                const removedSet = new Set();
+                let removedCount = 0;
+
+                // 6 kierunków przylegania (góra, dół, lewo, prawo, przód, tył)
+                const neighborsOffset = [
+                    {x: 1, y: 0, z: 0}, {x: -1, y: 0, z: 0},
+                    {x: 0, y: 1, z: 0}, {x: 0, y: -1, z: 0},
+                    {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -1}
+                ];
+
+                // 3. Usuwaj klocki, dopóki nie osiągniesz celu lub nie skończą się przylegające bloki
+                while (removedCount < count && frontier.length > 0) {
+                    // Wybierz losowego sąsiada z krawędzi wyrwy (aby kształt był organiczny)
+                    const randFrontierIdx = Math.floor(Math.random() * frontier.length);
+                    const pos = frontier.splice(randFrontierIdx, 1)[0]; 
+                    
+                    const key = `${pos.x},${pos.y},${pos.z}`;
+                    
+                    // Jeśli blok na tej pozycji istnieje i nie został jeszcze usunięty
+                    if (!removedSet.has(key) && blockMap.has(key)) {
+                        removeBlock(pos.x, pos.y, pos.z);
+                        removedSet.add(key);
+                        removedCount++;
+
+                        // Znajdź wszystkich fizycznych sąsiadów usuniętego właśnie klocka i dodaj do listy potencjalnych celów
+                        for (let offset of neighborsOffset) {
+                            const nx = pos.x + offset.x;
+                            const ny = pos.y + offset.y;
+                            const nz = pos.z + offset.z;
+                            const nKey = `${nx},${ny},${nz}`;
+                            
+                            // Jeśli sąsiad jest fizycznym klockiem i jeszcze go nie ruszyliśmy
+                            if (blockMap.has(nKey) && !removedSet.has(nKey)) {
+                                frontier.push({x: nx, y: ny, z: nz});
+                            }
+                        }
+                    }
+                }
             });
         }
 
