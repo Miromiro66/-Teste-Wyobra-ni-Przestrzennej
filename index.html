@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Wyobraźni Przestrzennej</title>
+    <!-- Ładowanie biblioteki Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Czcionka Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* Kosmiczna paleta kolorów z Twojego zrzutu ekranu */
+        :root {
+            --bg-deep: #0d0e1b;
+            --panel-bg: #1a1b2e;
+            --panel-border: #2c2f48;
+            --accent-blue: #4d5dff;
+            --accent-gold: #ffca28;
+            --accent-red: #ff4d4d;
+            --text-main: #ffffff;
+            --text-muted: #8b8ea5;
+        }
+
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 0%, #1e1f38 0%, var(--bg-deep) 70%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        /* Nagłówek */
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--text-main);
+            margin: 20px 0 5px 0;
+            font-size: 1.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(77, 93, 255, 0.5);
+        }
+        
+        #instructions {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Kontenery w stylu paneli UI ze zrzutu ekranu */
+        .glass-panel {
+            background-color: rgba(26, 27, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 15px 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            z-index: 10;
+        }
+
+        /* Licznik z ikoną (Złoty akcent) */
+        #blockCountPanel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .count-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        #blockCount {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent-gold);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-shadow: 0 0 15px rgba(255, 202, 40, 0.3);
+        }
+
+        /* Selektor */
+        select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--panel-border);
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        select:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(77, 93, 255, 0.3); }
+
+        /* Styl dla wyboru koloru siatki */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: 1px solid var(--panel-border);
+            background: var(--bg-deep);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 2px;
+            transition: all 0.3s ease;
+        }
+        input[type="color"]:focus, input[type="color"]:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(77, 93, 255, 0.3);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 6px;
+        }
+
+        /* Przyciski operacyjne */
+        #controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 10px;
+            z-index: 10;
+        }
+        
+        button {
+            flex: 1;
+            min-width: 130px;
+            padding: 12px 15px;
+            background-color: var(--panel-bg);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        button:hover {
+            background-color: #242640;
+            transform: translateY(-2px);
+        }
+
+        button:active { transform: translateY(1px); }
+
+        /* Klasa aktywnego trybu */
+        .active-mode {
+            background-color: rgba(77, 93, 255, 0.15) !important;
+            border-color: var(--accent-blue) !important;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(77, 93, 255, 0.3);
+        }
+        
+        /* Reset Button */
+        #resetModelBtn {
+            border-color: rgba(255, 77, 77, 0.3);
+        }
+        #resetModelBtn:hover {
+            background-color: rgba(255, 77, 77, 0.15);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.3);
+        }
+
+        /* Przycisk Drukowania */
+        #printBtn {
+            border-color: rgba(255, 202, 40, 0.3);
+            color: var(--accent-gold);
+        }
+        #printBtn:hover {
+            background-color: rgba(255, 202, 40, 0.15);
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 15px rgba(255, 202, 40, 0.3);
+        }
+
+        /* Ukryty obszar do drukowania */
+        #printArea {
+            display: none;
+        }
+
+        /* Konfiguracja wydruku (aktywuje się tylko podczas drukowania) */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            /* Ukryj cały interfejs UI i obszar edycji */
+            body > *:not(#printArea) {
+                display: none !important;
+            }
+            /* Pokaż tylko obraz do druku */
+            #printArea {
+                display: flex !important;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 100vh;
+            }
+            #printArea img {
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+
+        /* Obszar Canvas 3D */
+        #container {
+            width: 95vw;
+            height: 60vh;
+            max-width: 1000px;
+            background: radial-gradient(circle at center, #16182b 0%, #080911 100%);
+            border-radius: 20px;
+            border: 1px solid var(--panel-border);
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5), 0 15px 40px rgba(0,0,0,0.4);
+            margin-top: 10px;
+            touch-action: none;
+            overflow: hidden;
+            position: relative;
+        }
+
+        @media (max-width: 600px) {
+            #container { height: 50vh; border-radius: 12px; }
+            h1 { font-size: 1.3rem; }
+            button { min-width: 45%; font-size: 0.8rem; padding: 10px; }
+            .glass-panel { padding: 10px; flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Test Wyobraźni Przestrzennej</h1>
+    <div id="instructions">Zarządzanie modułami stacji</div>
+    
+    <div class="glass-panel" style="flex-direction: row; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span class="count-title">Rozmiar Sektora</span>
+            <select id="gridSizeSelect">
+                <option value="3">3x3x3</option>
+                <option value="4">4x4x4</option>
+                <option value="5">5x5x5</option>
+                <option value="6">6x6x6</option>
+                <option value="7">7x7x7</option>
+                <option value="8">8x8x8</option>
+                <option value="9">9x9x9</option>
+                <option value="10" selected>10x10x10</option> 
+            </select>
+        </div>
+        
+        <div style="width: 1px; height: 40px; background: var(--panel-border); margin: 0 10px;"></div>
+
+        <!-- Wybór Koloru Modułu -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <span class="count-title">Kolor Modułu</span>
+            <input type="color" id="blockColorPicker" value="#1e2235">
+        </div>
+
+        <!-- Wybór Koloru Siatki -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <span class="count-title">Kolor Siatki</span>
+            <input type="color" id="gridColorPicker" value="#00ffff">
+        </div>
+
+        <div style="width: 1px; height: 40px; background: var(--panel-border); margin: 0 10px;"></div>
+
+        <div id="blockCountPanel">
+            <span class="count-title">Stan Modułów</span>
+            <div id="blockCount">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-gold);"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                <span id="countText">0 / 1000</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="rotateModeBtn" class="active-mode">Obróć (Domyślne)</button>
+        <button id="addModeBtn">Dodaj Moduł</button>
+        <button id="removeModeBtn">Usuń Moduł</button>
+        <button id="resetModelBtn">Resetuj Model</button>
+        <button id="printBtn">Drukuj Projekt</button>
+    </div>
+
+    <!-- Ukryty kontener, z którego pobierany jest obraz do druku -->
+    <div id="printArea">
+        <img id="printImage" src="" alt="Wydruk Twojego projektu">
+    </div>
+
+    <div id="container"></div>
+
+    <script>
+        // === GLOBALNE ZMIENNE ===
+        let scene, camera, renderer, cubeGroup;
+        let isDragging = false;
+        let isRotationEnabled = true; 
+        let currentMode = 'rotate'; 
+        let raycaster, mouse = new THREE.Vector2();
+        
+        let gridHelper3D, volumeMesh;
+        let previewMesh; // Hologram podglądu (NOWOŚĆ)
+        let highlightMesh; // Podświetlenie do usunięcia (NOWOŚĆ)
+        
+        let dragStartMousePosition = { x: 0, y: 0 }; 
+        let previousMousePosition = { x: 0, y: 0 }; 
+        const rotationSpeed = 0.006; 
+        const CLICK_THRESHOLD = 10; 
+
+        const CUBE_SIZE = 1; 
+        const SPACING = 0.05; 
+        const TOTAL_BLOCK_SIZE = CUBE_SIZE + SPACING;
+        
+        let GRID_SIZE = 10; 
+        let MAX_BLOCKS;
+        let START_POS;
+
+        const MIN_DISTANCE = 5; 
+        const ZOOM_SPEED_FACTOR = 0.15; 
+
+        // === ESTETYKA MATERIAŁÓW ===
+        let currentGridColor = '#00ffff';
+        let currentBlockColor = '#1e2235';
+
+        const allBlocks = []; 
+        const blockMap = new Map();
+
+        // === OBLICZENIA I INICJALIZACJA ===
+        function calculateDimensions() {
+            MAX_BLOCKS = GRID_SIZE * GRID_SIZE * GRID_SIZE;
+            START_POS = - (GRID_SIZE - 1) * TOTAL_BLOCK_SIZE / 2;
+            
+            const cameraDistance = GRID_SIZE * 2.2; 
+            camera.position.set(cameraDistance, cameraDistance * 0.8, cameraDistance * 1.5); 
+            camera.lookAt(0, 0, 0); 
+            camera.updateProjectionMatrix();
+        }
+        
+        function updateBlockCountDisplay() {
+            const countText = document.getElementById('countText');
+            if (countText) countText.textContent = `${allBlocks.length} / ${MAX_BLOCKS}`;
+        }
+        
+        // Niewidzialna objętość do łapania promieni na pustej planszy
+        function createVolumeMesh() {
+            if (volumeMesh) { cubeGroup.remove(volumeMesh); volumeMesh.geometry.dispose(); volumeMesh.material.dispose(); }
+            const volumeSideLength = GRID_SIZE * TOTAL_BLOCK_SIZE;
+            const geometry = new THREE.BoxGeometry(volumeSideLength, volumeSideLength, volumeSideLength);
+            const material = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+            volumeMesh = new THREE.Mesh(geometry, material);
+            volumeMesh.userData.isVolume = true;
+            cubeGroup.add(volumeMesh);
+        }
+
+        // Siatka 3D - ciemnoniebieska
+        function create3DGridHelper() {
+            if (gridHelper3D) { cubeGroup.remove(gridHelper3D); gridHelper3D.geometry.dispose(); gridHelper3D.material.dispose(); }
+            const points = [];
+            // Zmieniono na dynamiczny kolor i zwiększono nieprzezroczystość (opacity: 0.6)
+            const material = new THREE.LineBasicMaterial({ color: currentGridColor, transparent: true, opacity: 0.6 });
+
+            const startCoord = START_POS - TOTAL_BLOCK_SIZE / 2;
+            const endCoord = START_POS + GRID_SIZE * TOTAL_BLOCK_SIZE - TOTAL_BLOCK_SIZE / 2;
+
+            for (let i = 0; i <= GRID_SIZE; i++) {
+                const p = START_POS + i * TOTAL_BLOCK_SIZE - TOTAL_BLOCK_SIZE / 2; 
+                for (let j = 0; j <= GRID_SIZE; j++) {
+                    const q = START_POS + j * TOTAL_BLOCK_SIZE - TOTAL_BLOCK_SIZE / 2; 
+                    points.push(new THREE.Vector3(startCoord, p, q), new THREE.Vector3(endCoord, p, q));
+                    points.push(new THREE.Vector3(p, startCoord, q), new THREE.Vector3(p, endCoord, q));
+                    points.push(new THREE.Vector3(q, p, startCoord), new THREE.Vector3(q, p, endCoord));
+                }
+            }
+            gridHelper3D = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points), material);
+            cubeGroup.add(gridHelper3D);
+        }
+
+        // NOWOŚĆ: Hologram podglądu klocka (Dodawanie)
+        function createPreviewMesh() {
+            const geo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+            const mat = new THREE.MeshBasicMaterial({ color: currentBlockColor, transparent: true, opacity: 0.4, wireframe: false });
+            previewMesh = new THREE.Mesh(geo, mat);
+            previewMesh.visible = false;
+            
+            // Krawędzie podglądu
+            const edges = new THREE.EdgesGeometry(geo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 }));
+            previewMesh.add(line);
+            cubeGroup.add(previewMesh);
+        }
+
+        // NOWOŚĆ: Podświetlenie klocka (Usuwanie)
+        function createHighlightMesh() {
+            const geo = new THREE.BoxGeometry(CUBE_SIZE + 0.05, CUBE_SIZE + 0.05, CUBE_SIZE + 0.05); // Trochę większy
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff4d4d, transparent: true, opacity: 0.5, wireframe: false });
+            highlightMesh = new THREE.Mesh(geo, mat);
+            highlightMesh.visible = false;
+            cubeGroup.add(highlightMesh);
+        }
+
+        function init() {
+            const container = document.getElementById('container');
+            
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            
+            // Renderer z obsługą High-DPI i możliwością robienia zrzutów ekranu (preserveDrawingBuffer)
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setPixelRatio(window.devicePixelRatio); // Ostrzejsza grafika
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            raycaster = new THREE.Raycaster();
+            cubeGroup = new THREE.Group();
+            scene.add(cubeGroup);
+
+            // Podstawowe, czyste oświetlenie sceny
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); 
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+
+            calculateDimensions();
+            createVolumeMesh();
+            create3DGridHelper();
+            createPreviewMesh();
+            createHighlightMesh();
+            
+            createInitialBlocks();
+
+            setupControls(container);
+            setupModeButtons();
+            setupSizeSelector(); 
+            setupGridColorPicker();
+            setupBlockColorPicker();
+            
+            animate();
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function setupSizeSelector() {
+            const selector = document.getElementById('gridSizeSelect');
+            selector.addEventListener('change', (event) => {
+                GRID_SIZE = parseInt(event.target.value, 10);
+                resetModel(); 
+            });
+            selector.value = GRID_SIZE.toString(); 
+        }
+
+        function setupGridColorPicker() {
+            const gridColorPicker = document.getElementById('gridColorPicker');
+            gridColorPicker.addEventListener('input', (event) => {
+                currentGridColor = event.target.value;
+                if (gridHelper3D) {
+                    gridHelper3D.material.color.set(currentGridColor);
+                }
+            });
+        }
+
+        function setupBlockColorPicker() {
+            const blockColorPicker = document.getElementById('blockColorPicker');
+            blockColorPicker.addEventListener('input', (event) => {
+                currentBlockColor = event.target.value;
+                if (previewMesh) {
+                    previewMesh.material.color.set(currentBlockColor);
+                }
+                // Natychmiastowa aktualizacja koloru dla wszystkich istniejących klocków
+                allBlocks.forEach(block => {
+                    block.material.color.set(currentBlockColor);
+                });
+            });
+        }
+        
+        function createBlock(x, y, z) {
+            const geometry = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: currentBlockColor, 
+                metalness: 0.3,
+                roughness: 0.4,
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            // Wyraźne błękitne krawędzie
+            const edges = new THREE.EdgesGeometry(geometry);
+            const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x4d5dff, transparent: true, opacity: 0.6 });
+            const line = new THREE.LineSegments(edges, edgeMaterial);
+
+            const posX = START_POS + x * TOTAL_BLOCK_SIZE;
+            const posY = START_POS + y * TOTAL_BLOCK_SIZE;
+            const posZ = START_POS + z * TOTAL_BLOCK_SIZE;
+            
+            mesh.position.set(posX, posY, posZ);
+            line.position.set(posX, posY, posZ);
+            
+            mesh.userData = { isBlock: true, gridPos: { x, y, z } };
+            
+            const blockContainer = new THREE.Group();
+            blockContainer.add(mesh);
+            blockContainer.add(line);
+
+            // Animacja wejścia (skalowanie z 0)
+            blockContainer.scale.set(0.01, 0.01, 0.01);
+            let scale = 0;
+            const grow = () => {
+                scale += 0.1;
+                if(scale <= 1) {
+                    blockContainer.scale.set(scale, scale, scale);
+                    requestAnimationFrame(grow);
+                } else {
+                    blockContainer.scale.set(1, 1, 1);
+                }
+            };
+            grow();
+
+            allBlocks.push(mesh);
+            blockMap.set(`${x},${y},${z}`, blockContainer);
+
+            return blockContainer;
+        }
+        
+        function addFullCube() {
+            for (let x = 0; x < GRID_SIZE; x++) {
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let z = 0; z < GRID_SIZE; z++) {
+                        addBlock(x, y, z); 
+                    }
+                }
+            }
+        }
+
+        function createInitialBlocks() {
+            addFullCube(); 
+            updateBlockCountDisplay(); 
+        }
+        
+        function removeBlock(x, y, z) {
+            const key = `${x},${y},${z}`;
+            const blockContainer = blockMap.get(key);
+
+            if (blockContainer) {
+                const meshToRemove = blockContainer.children.find(child => child.isMesh);
+                if (meshToRemove) {
+                    const index = allBlocks.indexOf(meshToRemove);
+                    if (index > -1) allBlocks.splice(index, 1);
+                }
+                
+                cubeGroup.remove(blockContainer);
+                blockContainer.traverse(obj => {
+                    if (obj.geometry) obj.geometry.dispose();
+                    if (obj.material) Array.isArray(obj.material) ? obj.material.forEach(m=>m.dispose()) : obj.material.dispose();
+                });
+
+                blockMap.delete(key);
+                updateBlockCountDisplay(); 
+                updatePreview(); // Ukryj podświetlenie po usunięciu
+            }
+        }
+
+        function addBlock(x, y, z) {
+            const key = `${x},${y},${z}`;
+            if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE && z >= 0 && z < GRID_SIZE && !blockMap.has(key)) {
+                const block = createBlock(x, y, z);
+                cubeGroup.add(block);
+                updateBlockCountDisplay(); 
+                updatePreview(); // Odśwież podgląd, bo pole jest już zajęte
+            }
+        }
+        
+        function resetModel() {
+            // Reset kolorów
+            currentBlockColor = '#1e2235';
+            document.getElementById('blockColorPicker').value = currentBlockColor;
+            currentGridColor = '#00ffff';
+            document.getElementById('gridColorPicker').value = currentGridColor;
+            if (previewMesh) previewMesh.material.color.set(currentBlockColor);
+
+            cubeGroup.rotation.set(0, 0, 0);
+            calculateDimensions(); 
+            createVolumeMesh();
+            create3DGridHelper();
+            
+            allBlocks.length = 0;
+            blockMap.clear();
+
+            cubeGroup.children.slice().forEach(child => {
+                if (child !== gridHelper3D && child !== volumeMesh && child !== previewMesh && child !== highlightMesh) {
+                    cubeGroup.remove(child);
+                    child.traverse(obj => {
+                        if (obj.geometry) obj.geometry.dispose();
+                        if (obj.material) Array.isArray(obj.material) ? obj.material.forEach(m=>m.dispose()) : obj.material.dispose();
+                    });
+                }
+            });
+
+            addFullCube();
+            updateMode('rotate');
+            isRotationEnabled = true;
+            document.getElementById('rotateModeBtn').classList.add('active-mode');
+        }
+
+        function onMouseWheel(event) {
+            event.preventDefault(); 
+            const baseDistance = GRID_SIZE * 2.5; 
+            const MAX_DISTANCE = baseDistance * 2.0; 
+            const zoomDirection = event.deltaY > 0 ? 1 : -1; 
+            const zoomAmount = zoomDirection * ZOOM_SPEED_FACTOR * camera.position.length() * 0.1;
+
+            let currentDistance = camera.position.length();
+            let newDistance = currentDistance + zoomAmount;
+
+            if (newDistance < MIN_DISTANCE) newDistance = MIN_DISTANCE;
+            else if (newDistance > MAX_DISTANCE) newDistance = MAX_DISTANCE;
+
+            if (newDistance !== currentDistance) {
+                const direction = camera.position.clone().normalize();
+                camera.position.copy(direction).multiplyScalar(newDistance);
+                camera.lookAt(0, 0, 0); 
+                camera.updateProjectionMatrix();
+            }
+        }
+
+        function setupControls(element) {
+            element.addEventListener('pointerdown', onPointerStart, false);
+            element.addEventListener('pointerup', onPointerEnd, false);
+            element.addEventListener('pointermove', onPointerMove, false);
+            element.addEventListener('wheel', onMouseWheel, {passive: false}); 
+            element.addEventListener('mouseleave', () => { 
+                isDragging = false; 
+                previewMesh.visible = false; 
+                highlightMesh.visible = false; 
+            });
+        }
+
+        function setupModeButtons() {
+            const rotateBtn = document.getElementById('rotateModeBtn');
+            const removeBtn = document.getElementById('removeModeBtn');
+            const addBtn = document.getElementById('addModeBtn');
+            const resetBtn = document.getElementById('resetModelBtn'); 
+            const instructions = document.getElementById('instructions');
+            const container = document.getElementById('container');
+            
+            window.updateMode = function(mode) {
+                removeBtn.classList.remove('active-mode');
+                addBtn.classList.remove('active-mode');
+                
+                currentMode = mode;
+                previewMesh.visible = false;
+                highlightMesh.visible = false;
+
+                switch (mode) {
+                    case 'rotate':
+                        if (isRotationEnabled) rotateBtn.classList.add('active-mode');
+                        container.style.cursor = isRotationEnabled ? 'grab' : 'default';
+                        instructions.textContent = isRotationEnabled ? 'Obracaj i przybliżaj strukturę.' : 'Tryb statyczny. Wybierz akcję.';
+                        break;
+                    case 'remove':
+                        removeBtn.classList.add('active-mode');
+                        rotateBtn.classList.remove('active-mode'); 
+                        container.style.cursor = 'crosshair'; 
+                        instructions.textContent = 'Kliknij moduł, aby go usunąć.';
+                        break;
+                    case 'add':
+                        addBtn.classList.add('active-mode');
+                        rotateBtn.classList.remove('active-mode'); 
+                        container.style.cursor = 'crosshair'; 
+                        instructions.textContent = 'Wybierz pole, aby zamontować nowy moduł.';
+                        break;
+                }
+                updatePreview(); // Wymusza odświeżenie podglądu zaraz po zmianie trybu
+            }
+
+            rotateBtn.addEventListener('click', () => {
+                if (currentMode === 'rotate' && isRotationEnabled) {
+                    isRotationEnabled = false;
+                    rotateBtn.classList.remove('active-mode');
+                    updateMode('rotate'); 
+                } else if (currentMode === 'rotate' && !isRotationEnabled) {
+                    isRotationEnabled = true;
+                    rotateBtn.classList.add('active-mode');
+                    updateMode('rotate'); 
+                } else {
+                    isRotationEnabled = true;
+                    updateMode('rotate'); 
+                }
+            });
+            
+            removeBtn.addEventListener('click', () => updateMode('remove'));
+            addBtn.addEventListener('click', () => updateMode('add'));
+            resetBtn.addEventListener('click', resetModel); 
+
+            // Obsługa drukowania (niezależnie od aktualnego widoku)
+            const printBtn = document.getElementById('printBtn');
+            printBtn.addEventListener('click', () => {
+                // 1. Zapisz aktualny stan kamery, aby móc do niego wrócić
+                const currentPos = camera.position.clone();
+                const currentQuat = camera.quaternion.clone();
+
+                // 2. Ustaw idealny, stały "izometryczny" widok do druku
+                const printDistance = GRID_SIZE * 2.2;
+                camera.position.set(printDistance, printDistance * 0.8, printDistance * 1.5);
+                camera.lookAt(0, 0, 0);
+                camera.updateProjectionMatrix();
+
+                // 3. Ukryj siatkę konstrukcyjną i podglądy (aby nie było ich na wydruku)
+                if (gridHelper3D) gridHelper3D.visible = false;
+                if (previewMesh) previewMesh.visible = false;
+                if (highlightMesh) highlightMesh.visible = false;
+
+                // 4. Wyrenderuj czystą scenę ze stałego widoku
+                renderer.render(scene, camera);
+
+                // 5. Stwórz obraz na podstawie klatki Canvas
+                const dataURL = renderer.domElement.toDataURL('image/png');
+
+                // 6. Przywróć kamerę do miejsca, w którym edytowałeś i pokaż siatkę
+                camera.position.copy(currentPos);
+                camera.quaternion.copy(currentQuat);
+                camera.updateProjectionMatrix();
+                if (gridHelper3D) gridHelper3D.visible = true;
+                updatePreview();
+
+                // 7. Wstaw wygenerowany obraz do ukrytego tagu <img>
+                const printImg = document.getElementById('printImage');
+                
+                // Uruchom systemowe okno drukowania, gdy przeglądarka załaduje obraz do DOM
+                printImg.onload = () => {
+                    window.print();
+                };
+                printImg.src = dataURL;
+            });
+        }
+
+        function getPointerCoordinates(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            let clientX = event.clientX;
+            let clientY = event.clientY;
+            
+            // Fallback dla starszych urządzeń touch
+            if (event.touches && event.touches.length > 0) {
+                clientX = event.touches[0].clientX;
+                clientY = event.touches[0].clientY;
+            }
+
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function setNormalizedMouse(x, y) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = (x / rect.width) * 2 - 1;
+            mouse.y = -(y / rect.height) * 2 + 1;
+        }
+
+        function onPointerStart(event) {
+            isDragging = true;
+            const coords = getPointerCoordinates(event);
+            dragStartMousePosition.x = coords.x;
+            dragStartMousePosition.y = coords.y;
+            previousMousePosition.x = coords.x;
+            previousMousePosition.y = coords.y;
+            
+            if(document.getElementById('container').style.cursor === 'grab') {
+                document.getElementById('container').style.cursor = 'grabbing';
+            }
+        }
+
+        function onPointerEnd(event) {
+            const coords = getPointerCoordinates(event);
+            const deltaX = Math.abs(coords.x - dragStartMousePosition.x);
+            const deltaY = Math.abs(coords.y - dragStartMousePosition.y);
+            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+            
+            if (distance < CLICK_THRESHOLD && (currentMode === 'remove' || currentMode === 'add')) {
+                setNormalizedMouse(coords.x, coords.y);
+                handleEditClick();
+            }
+
+            isDragging = false;
+            if(isRotationEnabled && currentMode === 'rotate') {
+                document.getElementById('container').style.cursor = 'grab';
+            }
+        }
+
+        function onPointerMove(event) {
+            const coords = getPointerCoordinates(event);
+            setNormalizedMouse(coords.x, coords.y);
+
+            // LOGIKA OBRACANIA (Tylko jeśli przeciągamy)
+            if (isDragging && isRotationEnabled) {
+                const deltaX = coords.x - previousMousePosition.x;
+                const deltaY = coords.y - previousMousePosition.y;
+
+                cubeGroup.rotation.y += deltaX * rotationSpeed;
+                cubeGroup.rotation.x += deltaY * rotationSpeed;
+                
+                previousMousePosition.x = coords.x;
+                previousMousePosition.y = coords.y;
+                
+                // Ukrywamy podglądy podczas obracania by nie rozpraszały
+                previewMesh.visible = false;
+                highlightMesh.visible = false;
+                return; // Nie wyliczaj podglądu podczas przeciągania
+            }
+
+            // LOGIKA PODGLĄDU (Kiedy mysz "unosi" się nad canvasem bez kliknięcia)
+            if (!isDragging) {
+                updatePreview();
+            }
+        }
+
+        // NOWOŚĆ: Funkcja aktualizująca pozycję hologramu/podświetlenia
+        function updatePreview() {
+            previewMesh.visible = false;
+            highlightMesh.visible = false;
+
+            if (currentMode !== 'add' && currentMode !== 'remove') return;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            if (currentMode === 'remove' && allBlocks.length > 0) {
+                const intersects = raycaster.intersectObjects(allBlocks, true);
+                if (intersects.length > 0) {
+                    const intersectedMesh = intersects[0].object;
+                    highlightMesh.position.copy(intersectedMesh.position);
+                    highlightMesh.visible = true;
+                }
+            } 
+            else if (currentMode === 'add') {
+                if (allBlocks.length > 0) {
+                    const intersects = raycaster.intersectObjects(allBlocks, true);
+                    if (intersects.length > 0) {
+                        const intersection = intersects[0];
+                        const intersectedObject = intersection.object;
+                        const gridPos = intersectedObject.userData.gridPos;
+                        
+                        const normal = intersection.face.normal.clone();
+                        const tempMatrix = new THREE.Matrix4().extractRotation( intersectedObject.matrixWorld );
+                        normal.applyMatrix4( tempMatrix ).normalize();
+
+                        const newX = gridPos.x + Math.round(normal.x);
+                        const newY = gridPos.y + Math.round(normal.y);
+                        const newZ = gridPos.z + Math.round(normal.z);
+                        
+                        if (newX >= 0 && newX < GRID_SIZE && newY >= 0 && newY < GRID_SIZE && newZ >= 0 && newZ < GRID_SIZE && !blockMap.has(`${newX},${newY},${newZ}`)) {
+                            const posX = START_POS + newX * TOTAL_BLOCK_SIZE;
+                            const posY = START_POS + newY * TOTAL_BLOCK_SIZE;
+                            const posZ = START_POS + newZ * TOTAL_BLOCK_SIZE;
+                            previewMesh.position.set(posX, posY, posZ);
+                            previewMesh.visible = true;
+                        }
+                    }
+                } else {
+                    // Pusta siatka
+                    const volumeIntersects = raycaster.intersectObjects([volumeMesh]);
+                    if (volumeIntersects.length > 0) {
+                        const centerIndex = Math.floor((GRID_SIZE - 1) / 2);
+                        const pos = START_POS + centerIndex * TOTAL_BLOCK_SIZE;
+                        previewMesh.position.set(pos, pos, pos);
+                        previewMesh.visible = true;
+                    }
+                }
+            }
+        }
+
+        function handleEditClick() {
+            raycaster.setFromCamera(mouse, camera);
+
+            if (currentMode === 'remove' && allBlocks.length > 0) {
+                const intersects = raycaster.intersectObjects(allBlocks, true);
+                if (intersects.length > 0) {
+                    const gridPos = intersects[0].object.userData.gridPos;
+                    removeBlock(gridPos.x, gridPos.y, gridPos.z);
+                }
+            } else if (currentMode === 'add') {
+                if (allBlocks.length > 0) {
+                    const intersects = raycaster.intersectObjects(allBlocks, true);
+                    if (intersects.length > 0) {
+                        const intersection = intersects[0];
+                        const intersectedObject = intersection.object;
+                        const gridPos = intersectedObject.userData.gridPos;
+                        
+                        const normal = intersection.face.normal.clone();
+                        const tempMatrix = new THREE.Matrix4().extractRotation( intersectedObject.matrixWorld );
+                        normal.applyMatrix4( tempMatrix ).normalize();
+
+                        const newX = gridPos.x + Math.round(normal.x);
+                        const newY = gridPos.y + Math.round(normal.y);
+                        const newZ = gridPos.z + Math.round(normal.z);
+                        
+                        addBlock(newX, newY, newZ);
+                    }
+                } else {
+                    const volumeIntersects = raycaster.intersectObjects([volumeMesh]);
+                    if (volumeIntersects.length > 0) {
+                        const centerIndex = Math.floor((GRID_SIZE - 1) / 2);
+                        addBlock(centerIndex, centerIndex, centerIndex);
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
