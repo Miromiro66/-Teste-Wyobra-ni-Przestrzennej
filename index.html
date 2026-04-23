@@ -287,21 +287,6 @@
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
         }
 
-        /* Lektor */
-        #readInstructionsBtn {
-            background-color: rgba(77, 93, 255, 0.15);
-            border-color: var(--accent-blue);
-            color: white;
-            font-size: 0.85rem;
-            padding: 10px;
-            width: auto;
-            margin-top: 10px;
-        }
-        #readInstructionsBtn:hover {
-            background-color: rgba(77, 93, 255, 0.3);
-            box-shadow: 0 0 15px rgba(77, 93, 255, 0.4);
-        }
-
         /* Ukryty obszar do drukowania */
         #printArea {
             display: none;
@@ -620,9 +605,6 @@
                 <li data-i18n="help7"><strong>Tryb Ucznia:</strong> Przycisk ukrywa licznik modułów oraz funkcję losowego wycinania. Przydatne, gdy dziecko ma samodzielnie policzyć klocki.</li>
                 <li data-i18n="help8"><strong>Drukuj Projekt:</strong> Tworzy idealnie dopasowany do kartki, płaski zrzut ekranu (na białym tle), z siatką lub bez.</li>
             </ul>
-            <div style="text-align: center; margin-top: 10px;">
-                <button id="readInstructionsBtn">🔊 Przeczytaj na głos</button>
-            </div>
         </div>
     </div>
 
@@ -668,11 +650,7 @@
                 help5: "<strong>Widoczność Siatki:</strong> Włącza lub wyłącza linie pomocnicze (przydatne do podziwiania gotowego modelu).",
                 help6: "<strong>Losowe Wycięcie:</strong> Wpisz ilość klocków i kliknij \"Usuń\", by błyskawicznie usunąć spójną grupę klocków (tworząc wyrwę/brakujący kawałek jak w klasycznych testach przestrzennych).",
                 help7: "<strong>Tryb Ucznia:</strong> Przycisk ukrywa licznik modułów oraz funkcję losowego wycinania. Przydatne, gdy dziecko ma samodzielnie policzyć klocki.",
-                help8: "<strong>Drukuj Projekt:</strong> Tworzy idealnie dopasowany do kartki, płaski zrzut ekranu (na białym tle), z siatką lub bez.",
-                readAloud: "🔊 Przeczytaj na głos",
-                stopReading: "🔇 Zatrzymaj czytanie",
-                ttsLang: "pl-PL",
-                ttsText: "Witaj w teście wyobraźni przestrzennej. Oto instrukcja obsługi. Rozmiar Sektora, pozwala zmienić wielkość przestrzeni roboczej. Uwaga, zmiana resetuje model. Obróć: Przeciągnij wskaźnikiem po ekranie, aby obrócić stację kosmiczną. Użyj kółka myszy, do przybliżania i oddalania. Dodaj Moduł: Kliknij na puste pole lub ścianę klocka, aby dobudować nowy moduł. Usuń Moduł: Kliknij na dowolny klocek stacji, aby go zdemontować. Widoczność Siatki: Włącza lub wyłącza niebieskie linie pomocnicze. Losowe Wycięcie: Wpisz ilość klocków i kliknij Usuń, by usunąć spójną grupę, tworząc wyrwę, jak w klasycznych testach przestrzennych. Tryb Ucznia: Ukrywa licznik modułów, przydatne, gdy uczeń ma samodzielnie policzyć klocki. Drukuj Projekt: Tworzy płaski zrzut ekranu do wydrukowania. Powodzenia w nauce!"
+                help8: "<strong>Drukuj Projekt:</strong> Tworzy idealnie dopasowany do kartki, płaski zrzut ekranu (na białym tle), z siatką lub bez."
             },
             en: {
                 languageText: "Language",
@@ -709,11 +687,7 @@
                 help5: "<strong>Grid Visibility:</strong> Toggles helper lines on or off (useful for admiring the finished model).",
                 help6: "<strong>Random Cutout:</strong> Enter the amount of blocks and click Remove to quickly delete a cohesive group of blocks (creating a gap like in classic spatial tests).",
                 help7: "<strong>Student Mode:</strong> Hides the module counter and random remove function. Useful when a child needs to count the blocks independently.",
-                help8: "<strong>Print Project:</strong> Creates a perfectly fitted, flat screenshot (on a white background), with or without a grid.",
-                readAloud: "🔊 Read aloud",
-                stopReading: "🔇 Stop reading",
-                ttsLang: "en-US",
-                ttsText: "Welcome to the spatial imagination test. Here is the user manual. Sector Size allows you to change the workspace size. Note, changing this resets the model. Rotate: Drag your pointer across the screen to rotate the space station. Use the mouse wheel to zoom in and out. Add Module: Click an empty space or a block's wall to build a new module. Remove Module: Click any station block to dismantle it. Grid Visibility: Turns the blue helper lines on or off. Random Cutout: Enter the number of blocks and click Remove to delete a cohesive group, creating a gap like in classic spatial tests. Student Mode: Hides the module counter, useful when a student needs to count blocks independently. Print Project: Creates a flat screenshot for printing. Good luck learning!"
+                help8: "<strong>Print Project:</strong> Creates a perfectly fitted, flat screenshot (on a white background), with or without a grid."
             },
             is: {
                 languageText: "Tungumál",
@@ -750,26 +724,12 @@
                 help5: "<strong>Sýnileiki ramma:</strong> Kveikir eða slekkur á hjálparlínum (gott til að dást að tilbúnu líkani).",
                 help6: "<strong>Klippa af handahófi:</strong> Sláðu inn fjölda kubba og smelltu á Eyða til að fjarlægja fljótt samhangandi hóp af kubbum (býr til gat eins og í klassískum rýmisprófum).",
                 help7: "<strong>Nemendastilling:</strong> Felur einingateljara og slembieyðingu. Gagnlegt þegar barn á að telja kubbana upp á eigin spýtur.",
-                help8: "<strong>Prenta verkefni:</strong> Býr til fullkomlega aðlagaða, flata skjámynd (á hvítum bakgrunni), með eða án ramma.",
-                readAloud: "🔊 Lesa upphátt",
-                stopReading: "🔇 Hætta lestri",
-                ttsLang: "is-IS",
-                ttsText: "Velkomin í prófið í rýmisgreind. Hér eru leiðbeiningar. Stærð svæðis gerir þér kleift að breyta stærð vinnusvæðis. Athugaðu, ef þessu er breytt núllstillist líkanið. Snúa: Dragðu bendilinn yfir skjáinn til að snúa geimstöðinni. Notaðu skrunhjól músarinnar til að þysja inn og út. Bæta við einingu: Smelltu á tómt svæði eða vegg kubbs til að byggja nýja einingu. Fjarlægja einingu: Smelltu á hvaða stöðvarkubb sem er til að taka hann í sundur. Sýnileiki ramma: Kveikir eða slekkur á bláu hjálparlínum. Klippa af handahófi: Sláðu inn fjölda kubba og smelltu á Eyða til að fjarlægja samhangandi hóp og búa til gat, eins og í klassískum rýmisprófum. Nemendastilling: Felur einingateljara, gagnlegt þegar nemandi þarf að telja kubba sjálfur. Prenta verkefni: Býr til flata skjámynd til prentunar. Gangi þér vel að læra!"
+                help8: "<strong>Prenta verkefni:</strong> Býr til fullkomlega aðlagaða, flata skjámynd (á hvítum bakgrunni), með eða án ramma."
             }
         };
 
         let appLanguage = localStorage.getItem('spatialTestLang') || 'pl';
         let isStudentMode = false;
-        let isReadingAloud = false;
-        let synth = window.speechSynthesis;
-        
-        // Zabezpieczenie: ładujemy listę głosów, żeby była gotowa, gdy użytkownik kliknie czytanie
-        let availableVoices = [];
-        if (speechSynthesis.onvoiceschanged !== undefined) {
-            speechSynthesis.onvoiceschanged = () => {
-                availableVoices = synth.getVoices();
-            };
-        }
 
         // === GLOBALNE ZMIENNE ===
         let scene, camera, renderer, cubeGroup;
@@ -967,13 +927,6 @@
                         e.currentTarget.classList.add('active-flag');
                         
                         updateLanguage();
-                        
-                        // Jeśli lektor aktualnie czyta, przestań (bo zmienił się język)
-                        if (synth && synth.speaking) {
-                            synth.cancel();
-                            isReadingAloud = false;
-                            document.getElementById('readInstructionsBtn').innerHTML = translations[appLanguage].readAloud;
-                        }
                     }
                 });
             });
@@ -993,9 +946,6 @@
             // Tłumaczenie specjalnych elementów (title i tooltipy)
             document.getElementById('randomRemoveLabel').title = t.randomRemoveTooltip;
             document.getElementById('randomRemoveCount').title = t.randomRemoveCountTooltip;
-            
-            // Tłumaczenie przycisku lektora na bieżący stan
-            document.getElementById('readInstructionsBtn').innerHTML = isReadingAloud ? t.stopReading : t.readAloud;
 
             // Zaktualizuj interfejs instrukcji na podstawie bieżącego trybu
             updateInstructionText();
@@ -1044,93 +994,24 @@
             }
         }
 
-        // === OBSŁUGA GŁOSU I MODALI ===
+        // === OBSŁUGA MODALI ===
         function setupModal() {
             const helpModal = document.getElementById('helpModal');
             const helpBtn = document.getElementById('helpBtn');
             const closeHelpX = document.getElementById('closeHelpX');
-            const readInstructionsBtn = document.getElementById('readInstructionsBtn');
-
-            function stopSpeech() {
-                if (synth) synth.cancel();
-                isReadingAloud = false;
-                readInstructionsBtn.innerHTML = translations[appLanguage].readAloud;
-            }
 
             helpBtn.addEventListener('click', () => {
                 helpModal.style.display = 'flex';
             });
 
-            readInstructionsBtn.addEventListener('click', () => {
-                if (isReadingAloud) {
-                    stopSpeech();
-                } else {
-                    const ttsLangCode = translations[appLanguage].ttsLang;
-                    const text = translations[appLanguage].ttsText;
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = ttsLangCode;
-                    
-                    // Zwiększona dynamika lektora
-                    utterance.rate = 1.05; 
-                    utterance.pitch = 1.1; 
-                    utterance.volume = 1.0; 
-                    
-                    // Pobieramy świeżą listę głosów z przeglądarki/systemu
-                    let voices = synth.getVoices();
-                    
-                    if (voices.length > 0) {
-                        const langPrefix = ttsLangCode.substring(0, 2).toLowerCase();
-                        
-                        // Znajdź głosy pasujące do aktualnego języka
-                        let langVoices = voices.filter(v => v.lang.toLowerCase().includes(langPrefix));
-                        
-                        if (langVoices.length > 0) {
-                            // Sortowanie - szukamy kobiety i najlepszej jakości
-                            langVoices.sort((a, b) => {
-                                const nameA = a.name.toLowerCase();
-                                const nameB = b.name.toLowerCase();
-                                
-                                // Omijamy znane głosy męskie, faworyzujemy znane głosy żeńskie/naturalne
-                                const maleNames = ['david', 'mark', 'marek', 'tomasz', 'stefan', 'stefán', 'adam', 'male', 'man', 'guy'];
-                                const femaleNames = ['paulina', 'zira', 'gudrun', 'guðrún', 'dóra', 'dora', 'samantha', 'victoria', 'female', 'woman', 'girl', 'google'];
-                                
-                                let scoreA = 0; let scoreB = 0;
-                                
-                                if (femaleNames.some(n => nameA.includes(n))) scoreA += 10;
-                                if (maleNames.some(n => nameA.includes(n))) scoreA -= 10;
-                                if (nameA.includes('google') || nameA.includes('premium') || nameA.includes('natural')) scoreA += 5;
-                                
-                                if (femaleNames.some(n => nameB.includes(n))) scoreB += 10;
-                                if (maleNames.some(n => nameB.includes(n))) scoreB -= 10;
-                                if (nameB.includes('google') || nameB.includes('premium') || nameB.includes('natural')) scoreB += 5;
-                                
-                                return scoreB - scoreA; // Wynik najwyżej punktowany będzie na miejscu 0
-                            });
-                            
-                            // Ustaw najlepszy dopasowany żeński głos
-                            utterance.voice = langVoices[0];
-                        }
-                    }
-                    
-                    utterance.onend = stopSpeech; 
-                    utterance.onerror = stopSpeech; // Zabezpieczenie przed zablokowaniem w razie błędu odtwarzania
-                    
-                    synth.speak(utterance);
-                    isReadingAloud = true;
-                    readInstructionsBtn.innerHTML = translations[appLanguage].stopReading;
-                }
-            });
-
             const closeHelp = () => { 
                 helpModal.style.display = 'none'; 
-                stopSpeech(); 
             };
             closeHelpX.addEventListener('click', closeHelp);
 
             window.addEventListener('click', (e) => {
                 if(e.target === helpModal) {
                     helpModal.style.display = 'none';
-                    stopSpeech(); 
                 }
             });
         }
