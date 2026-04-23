@@ -762,6 +762,14 @@
         let isStudentMode = false;
         let isReadingAloud = false;
         let synth = window.speechSynthesis;
+        
+        // Zabezpieczenie: ładujemy listę głosów, żeby była gotowa, gdy użytkownik kliknie czytanie
+        let availableVoices = [];
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                availableVoices = synth.getVoices();
+            };
+        }
 
         // === GLOBALNE ZMIENNE ===
         let scene, camera, renderer, cubeGroup;
@@ -1057,11 +1065,55 @@
                 if (isReadingAloud) {
                     stopSpeech();
                 } else {
+                    const ttsLangCode = translations[appLanguage].ttsLang;
                     const text = translations[appLanguage].ttsText;
                     const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = translations[appLanguage].ttsLang;
-                    utterance.rate = 0.95; 
+                    utterance.lang = ttsLangCode;
+                    
+                    // Zwiększona dynamika lektora
+                    utterance.rate = 1.05; 
+                    utterance.pitch = 1.1; 
+                    utterance.volume = 1.0; 
+                    
+                    // Pobieramy świeżą listę głosów z przeglądarki/systemu
+                    let voices = synth.getVoices();
+                    
+                    if (voices.length > 0) {
+                        const langPrefix = ttsLangCode.substring(0, 2).toLowerCase();
+                        
+                        // Znajdź głosy pasujące do aktualnego języka
+                        let langVoices = voices.filter(v => v.lang.toLowerCase().includes(langPrefix));
+                        
+                        if (langVoices.length > 0) {
+                            // Sortowanie - szukamy kobiety i najlepszej jakości
+                            langVoices.sort((a, b) => {
+                                const nameA = a.name.toLowerCase();
+                                const nameB = b.name.toLowerCase();
+                                
+                                // Omijamy znane głosy męskie, faworyzujemy znane głosy żeńskie/naturalne
+                                const maleNames = ['david', 'mark', 'marek', 'tomasz', 'stefan', 'stefán', 'adam', 'male', 'man', 'guy'];
+                                const femaleNames = ['paulina', 'zira', 'gudrun', 'guðrún', 'dóra', 'dora', 'samantha', 'victoria', 'female', 'woman', 'girl', 'google'];
+                                
+                                let scoreA = 0; let scoreB = 0;
+                                
+                                if (femaleNames.some(n => nameA.includes(n))) scoreA += 10;
+                                if (maleNames.some(n => nameA.includes(n))) scoreA -= 10;
+                                if (nameA.includes('google') || nameA.includes('premium') || nameA.includes('natural')) scoreA += 5;
+                                
+                                if (femaleNames.some(n => nameB.includes(n))) scoreB += 10;
+                                if (maleNames.some(n => nameB.includes(n))) scoreB -= 10;
+                                if (nameB.includes('google') || nameB.includes('premium') || nameB.includes('natural')) scoreB += 5;
+                                
+                                return scoreB - scoreA; // Wynik najwyżej punktowany będzie na miejscu 0
+                            });
+                            
+                            // Ustaw najlepszy dopasowany żeński głos
+                            utterance.voice = langVoices[0];
+                        }
+                    }
+                    
                     utterance.onend = stopSpeech; 
+                    utterance.onerror = stopSpeech; // Zabezpieczenie przed zablokowaniem w razie błędu odtwarzania
                     
                     synth.speak(utterance);
                     isReadingAloud = true;
