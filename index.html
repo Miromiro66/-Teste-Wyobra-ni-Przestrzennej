@@ -579,9 +579,13 @@
         const MIN_DISTANCE = 5; 
         const ZOOM_SPEED_FACTOR = 0.15; 
 
-        // === ESTETYKA MATERIAŁÓW ===
-        let currentGridColor = '#00ffff';
-        let currentBlockColor = '#1e2235';
+        // Zmienna zapamiętująca krawędź ostatniego wycięcia (do kontynuacji dziury)
+        let activeCraterFrontier = [];
+
+        // === ESTETYKA MATERIAŁÓW (PAMIĘĆ BROWSERA) ===
+        // Odczytujemy zapisane kolory lub ustawiamy domyślne, jeśli to pierwsze uruchomienie
+        let currentGridColor = localStorage.getItem('spatialTestGridColor') || '#00ffff';
+        let currentBlockColor = localStorage.getItem('spatialTestBlockColor') || '#1e2235';
 
         const allBlocks = []; 
         const blockMap = new Map();
@@ -687,6 +691,10 @@
             directionalLight.position.set(10, 10, 10);
             scene.add(directionalLight);
 
+            // Zaktualizuj inputy HTML kolorami z localStorage przed załadowaniem klocków
+            document.getElementById('gridColorPicker').value = currentGridColor;
+            document.getElementById('blockColorPicker').value = currentBlockColor;
+
             calculateDimensions();
             createVolumeMesh();
             create3DGridHelper();
@@ -757,42 +765,44 @@
                     {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -1}
                 ];
 
-                // Pętla na wypadek, gdyby wycięcie "utknęło" i trzeba było zacząć nowe w innym miejscu
+                // Pętla na wypadek, gdyby wycięcie "utknęło"
                 while (removedCount < count && safetyNet < 100) {
                     safetyNet++;
+                    let startPos = null;
 
-                    // 1. ZNAJDŹ TYLKO WIDOCZNE KLOCKI (ZEWNĘTRZNE) - gwarantuje, że wyrwa będzie od razu widoczna!
-                    const visibleBlocks = allBlocks.filter(block => {
-                        const pos = block.userData.gridPos;
-                        
-                        // Zawsze widoczne krawędzie zewnętrzne siatki
-                        if (pos.x === 0 || pos.x === GRID_SIZE - 1 ||
-                            pos.y === 0 || pos.y === GRID_SIZE - 1 ||
-                            pos.z === 0 || pos.z === GRID_SIZE - 1) return true;
+                    // KROK 1: SPRÓBUJ KONTYNUOWAĆ OSTATNIE WYCIĘCIE
+                    // Upewnijmy się, że zapamiętane bloki na krawędzi dalej tam są
+                    activeCraterFrontier = activeCraterFrontier.filter(pos => blockMap.has(`${pos.x},${pos.y},${pos.z}`));
+                    
+                    if (activeCraterFrontier.length > 0) {
+                        // Jeśli dziura już istnieje, losujemy klocek z jej krawędzi
+                        const randIdx = Math.floor(Math.random() * activeCraterFrontier.length);
+                        startPos = activeCraterFrontier[randIdx];
+                    } else {
+                        // Jeśli to pierwsze wycięcie (lub brak punktów), znajdź klocek na zewnątrz bryły
+                        const visibleBlocks = allBlocks.filter(block => {
+                            const pos = block.userData.gridPos;
+                            if (pos.x === 0 || pos.x === GRID_SIZE - 1 ||
+                                pos.y === 0 || pos.y === GRID_SIZE - 1 ||
+                                pos.z === 0 || pos.z === GRID_SIZE - 1) return true;
 
-                        // Sprawdzenie czy klocek ma "puste" sąsiedztwo z jakiejkolwiek strony (jest na krawędzi wyrwy)
-                        for (let offset of neighborsOffset) {
-                            const nKey = `${pos.x + offset.x},${pos.y + offset.y},${pos.z + offset.z}`;
-                            if (!blockMap.has(nKey)) return true;
-                        }
-                        return false;
-                    });
+                            for (let offset of neighborsOffset) {
+                                const nKey = `${pos.x + offset.x},${pos.y + offset.y},${pos.z + offset.z}`;
+                                if (!blockMap.has(nKey)) return true;
+                            }
+                            return false;
+                        });
 
-                    if (visibleBlocks.length === 0) break; // Brak klocków do usunięcia
+                        if (visibleBlocks.length === 0) break; // Brak klocków do usunięcia
+                        const startIndex = Math.floor(Math.random() * visibleBlocks.length);
+                        startPos = visibleBlocks[startIndex].userData.gridPos;
+                    }
 
-                    // 2. Wybierz losowy klocek startowy ZAWSZE NA POWIERZCHNI
-                    const startIndex = Math.floor(Math.random() * visibleBlocks.length);
-                    const startBlock = visibleBlocks[startIndex];
-                    const startPos = startBlock.userData.gridPos;
+                    // Inicjalizacja poszukiwań "sąsiadów"
+                    let frontier = [startPos];
 
-                    // 3. Inicjalizacja poszukiwań "sąsiadów" (tworzenie spójnej wyrwy do wewnątrz)
-                    const frontier = [startPos];
-
-                    // Usuwaj klocki wgryzając się w strukturę (NOWA LOGIKA: płytki krater zamiast tuneli)
+                    // Usuwaj klocki wgryzając się w strukturę (płytki krater)
                     while (removedCount < count && frontier.length > 0) {
-                        
-                        // SZUKAMY NAJBARDZIEJ ODSŁONIĘTYCH KLOCKÓW
-                        // Dzięki temu wyrwa rośnie wszerz, a nie w głąb. Wszystkie braki będą widoczne!
                         let minSolidNeighbors = 7;
                         let bestCandidates = [];
 
@@ -814,7 +824,6 @@
                             }
                         }
 
-                        // Wybierz losowo jeden z najbardziej odsłoniętych klocków
                         const randCandidateIdx = Math.floor(Math.random() * bestCandidates.length);
                         const chosenFrontierIdx = bestCandidates[randCandidateIdx];
                         const pos = frontier.splice(chosenFrontierIdx, 1)[0]; 
@@ -826,7 +835,7 @@
                             removedSet.add(key);
                             removedCount++;
 
-                            // Znajdź fizycznych sąsiadów i dodaj ich jako kolejne cele
+                            // Dodaj sąsiadów do krawędzi
                             for (let offset of neighborsOffset) {
                                 const nx = pos.x + offset.x;
                                 const ny = pos.y + offset.y;
@@ -834,7 +843,6 @@
                                 const nKey = `${nx},${ny},${nz}`;
                                 
                                 if (blockMap.has(nKey) && !removedSet.has(nKey)) {
-                                    // Dodaj do listy tylko, jeśli jeszcze go tam nie ma
                                     if (!frontier.some(f => f.x === nx && f.y === ny && f.z === nz)) {
                                         frontier.push({x: nx, y: ny, z: nz});
                                     }
@@ -842,6 +850,9 @@
                             }
                         }
                     }
+                    
+                    // ZAPAMIĘTUJEMY NOWĄ KRAWĘDŹ, aby następne kliknięcie zaczęło tam, gdzie to skończyło
+                    activeCraterFrontier = [...frontier];
                 }
             });
         }
@@ -859,6 +870,8 @@
             const gridColorPicker = document.getElementById('gridColorPicker');
             gridColorPicker.addEventListener('input', (event) => {
                 currentGridColor = event.target.value;
+                localStorage.setItem('spatialTestGridColor', currentGridColor); // Zapis do pamięci
+                
                 if (gridHelper3D) {
                     gridHelper3D.material.color.set(currentGridColor);
                 }
@@ -869,6 +882,8 @@
             const blockColorPicker = document.getElementById('blockColorPicker');
             blockColorPicker.addEventListener('input', (event) => {
                 currentBlockColor = event.target.value;
+                localStorage.setItem('spatialTestBlockColor', currentBlockColor); // Zapis do pamięci
+                
                 if (previewMesh) {
                     previewMesh.material.color.set(currentBlockColor);
                 }
@@ -975,11 +990,7 @@
         }
         
         function resetModel() {
-            // Reset kolorów
-            currentBlockColor = '#1e2235';
-            document.getElementById('blockColorPicker').value = currentBlockColor;
-            currentGridColor = '#00ffff';
-            document.getElementById('gridColorPicker').value = currentGridColor;
+            // Zmiana rozmiaru lub reset modelu nie kasuje już kolorów zapisanych przez użytkownika!
             if (previewMesh) previewMesh.material.color.set(currentBlockColor);
 
             cubeGroup.rotation.set(0, 0, 0);
@@ -989,6 +1000,7 @@
             
             allBlocks.length = 0;
             blockMap.clear();
+            activeCraterFrontier = []; // Resetujemy również pamięć "krateru"
 
             cubeGroup.children.slice().forEach(child => {
                 if (child !== gridHelper3D && child !== volumeMesh && child !== previewMesh && child !== highlightMesh) {
