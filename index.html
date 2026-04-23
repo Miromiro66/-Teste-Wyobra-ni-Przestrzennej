@@ -744,50 +744,101 @@
                 
                 // Zabezpieczenia
                 if (isNaN(count) || count <= 0 || allBlocks.length === 0) return;
-                
                 count = Math.min(count, allBlocks.length);
                 
-                // 1. Wybierz losowy klocek startowy
-                const startIndex = Math.floor(Math.random() * allBlocks.length);
-                const startBlock = allBlocks[startIndex];
-                const startPos = startBlock.userData.gridPos;
-
-                // 2. Inicjalizacja poszukiwań "sąsiadów"
-                const frontier = [startPos];
-                const removedSet = new Set();
                 let removedCount = 0;
+                const removedSet = new Set();
+                let safetyNet = 0;
 
-                // 6 kierunków przylegania (góra, dół, lewo, prawo, przód, tył)
+                // Kierunki sąsiadów
                 const neighborsOffset = [
                     {x: 1, y: 0, z: 0}, {x: -1, y: 0, z: 0},
                     {x: 0, y: 1, z: 0}, {x: 0, y: -1, z: 0},
                     {x: 0, y: 0, z: 1}, {x: 0, y: 0, z: -1}
                 ];
 
-                // 3. Usuwaj klocki, dopóki nie osiągniesz celu lub nie skończą się przylegające bloki
-                while (removedCount < count && frontier.length > 0) {
-                    // Wybierz losowego sąsiada z krawędzi wyrwy (aby kształt był organiczny)
-                    const randFrontierIdx = Math.floor(Math.random() * frontier.length);
-                    const pos = frontier.splice(randFrontierIdx, 1)[0]; 
-                    
-                    const key = `${pos.x},${pos.y},${pos.z}`;
-                    
-                    // Jeśli blok na tej pozycji istnieje i nie został jeszcze usunięty
-                    if (!removedSet.has(key) && blockMap.has(key)) {
-                        removeBlock(pos.x, pos.y, pos.z);
-                        removedSet.add(key);
-                        removedCount++;
+                // Pętla na wypadek, gdyby wycięcie "utknęło" i trzeba było zacząć nowe w innym miejscu
+                while (removedCount < count && safetyNet < 100) {
+                    safetyNet++;
 
-                        // Znajdź wszystkich fizycznych sąsiadów usuniętego właśnie klocka i dodaj do listy potencjalnych celów
+                    // 1. ZNAJDŹ TYLKO WIDOCZNE KLOCKI (ZEWNĘTRZNE) - gwarantuje, że wyrwa będzie od razu widoczna!
+                    const visibleBlocks = allBlocks.filter(block => {
+                        const pos = block.userData.gridPos;
+                        
+                        // Zawsze widoczne krawędzie zewnętrzne siatki
+                        if (pos.x === 0 || pos.x === GRID_SIZE - 1 ||
+                            pos.y === 0 || pos.y === GRID_SIZE - 1 ||
+                            pos.z === 0 || pos.z === GRID_SIZE - 1) return true;
+
+                        // Sprawdzenie czy klocek ma "puste" sąsiedztwo z jakiejkolwiek strony (jest na krawędzi wyrwy)
                         for (let offset of neighborsOffset) {
-                            const nx = pos.x + offset.x;
-                            const ny = pos.y + offset.y;
-                            const nz = pos.z + offset.z;
-                            const nKey = `${nx},${ny},${nz}`;
+                            const nKey = `${pos.x + offset.x},${pos.y + offset.y},${pos.z + offset.z}`;
+                            if (!blockMap.has(nKey)) return true;
+                        }
+                        return false;
+                    });
+
+                    if (visibleBlocks.length === 0) break; // Brak klocków do usunięcia
+
+                    // 2. Wybierz losowy klocek startowy ZAWSZE NA POWIERZCHNI
+                    const startIndex = Math.floor(Math.random() * visibleBlocks.length);
+                    const startBlock = visibleBlocks[startIndex];
+                    const startPos = startBlock.userData.gridPos;
+
+                    // 3. Inicjalizacja poszukiwań "sąsiadów" (tworzenie spójnej wyrwy do wewnątrz)
+                    const frontier = [startPos];
+
+                    // Usuwaj klocki wgryzając się w strukturę (NOWA LOGIKA: płytki krater zamiast tuneli)
+                    while (removedCount < count && frontier.length > 0) {
+                        
+                        // SZUKAMY NAJBARDZIEJ ODSŁONIĘTYCH KLOCKÓW
+                        // Dzięki temu wyrwa rośnie wszerz, a nie w głąb. Wszystkie braki będą widoczne!
+                        let minSolidNeighbors = 7;
+                        let bestCandidates = [];
+
+                        for (let i = 0; i < frontier.length; i++) {
+                            const fPos = frontier[i];
+                            let solidCount = 0;
+                            for (let offset of neighborsOffset) {
+                                const nKey = `${fPos.x + offset.x},${fPos.y + offset.y},${fPos.z + offset.z}`;
+                                if (blockMap.has(nKey) && !removedSet.has(nKey)) {
+                                    solidCount++;
+                                }
+                            }
                             
-                            // Jeśli sąsiad jest fizycznym klockiem i jeszcze go nie ruszyliśmy
-                            if (blockMap.has(nKey) && !removedSet.has(nKey)) {
-                                frontier.push({x: nx, y: ny, z: nz});
+                            if (solidCount < minSolidNeighbors) {
+                                minSolidNeighbors = solidCount;
+                                bestCandidates = [i];
+                            } else if (solidCount === minSolidNeighbors) {
+                                bestCandidates.push(i);
+                            }
+                        }
+
+                        // Wybierz losowo jeden z najbardziej odsłoniętych klocków
+                        const randCandidateIdx = Math.floor(Math.random() * bestCandidates.length);
+                        const chosenFrontierIdx = bestCandidates[randCandidateIdx];
+                        const pos = frontier.splice(chosenFrontierIdx, 1)[0]; 
+                        
+                        const key = `${pos.x},${pos.y},${pos.z}`;
+                        
+                        if (!removedSet.has(key) && blockMap.has(key)) {
+                            removeBlock(pos.x, pos.y, pos.z);
+                            removedSet.add(key);
+                            removedCount++;
+
+                            // Znajdź fizycznych sąsiadów i dodaj ich jako kolejne cele
+                            for (let offset of neighborsOffset) {
+                                const nx = pos.x + offset.x;
+                                const ny = pos.y + offset.y;
+                                const nz = pos.z + offset.z;
+                                const nKey = `${nx},${ny},${nz}`;
+                                
+                                if (blockMap.has(nKey) && !removedSet.has(nKey)) {
+                                    // Dodaj do listy tylko, jeśli jeszcze go tam nie ma
+                                    if (!frontier.some(f => f.x === nx && f.y === ny && f.z === nz)) {
+                                        frontier.push({x: nx, y: ny, z: nz});
+                                    }
+                                }
                             }
                         }
                     }
