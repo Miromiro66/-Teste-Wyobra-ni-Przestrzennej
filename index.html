@@ -111,7 +111,7 @@
         }
         select:focus { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(77, 93, 255, 0.3); }
 
-        /* Styl dla wyboru koloru siatki */
+        /* Styl dla wyboru koloru siatki i pola wyboru */
         input[type="color"] {
             -webkit-appearance: none;
             border: 1px solid var(--panel-border);
@@ -282,6 +282,14 @@
         <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
             <span class="count-title">Kolor Siatki</span>
             <input type="color" id="gridColorPicker" value="#00ffff">
+        </div>
+
+        <div style="width: 1px; height: 40px; background: var(--panel-border); margin: 0 10px;"></div>
+
+        <!-- Wybór czy drukować siatkę -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
+            <label for="printGridCheckbox" class="count-title" style="cursor: pointer; margin: 0;">Drukuj Siatkę</label>
+            <input type="checkbox" id="printGridCheckbox" style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent-gold);" checked>
         </div>
 
         <div style="width: 1px; height: 40px; background: var(--panel-border); margin: 0 10px;"></div>
@@ -711,15 +719,17 @@
             addBtn.addEventListener('click', () => updateMode('add'));
             resetBtn.addEventListener('click', resetModel); 
 
-            // Zaktualizowana obsługa drukowania
+            // Zaktualizowana obsługa drukowania z opcją siatki
             const printBtn = document.getElementById('printBtn');
             printBtn.addEventListener('click', () => {
                 // 1. Zapisz aktualny stan kamery
                 const currentPos = camera.position.clone();
                 const currentQuat = camera.quaternion.clone();
 
+                // Sprawdzenie wyboru użytkownika - czy drukować z siatką
+                const shouldPrintGrid = document.getElementById('printGridCheckbox').checked;
+
                 // 2. Oblicz wymaganą bezpieczną odległość, by zmieścić całą siatkę w kadrze
-                // bazując na wielkości największej przekątnej (bounding sphere)
                 const maxDimension = GRID_SIZE * TOTAL_BLOCK_SIZE;
                 const boundingRadius = (maxDimension * Math.sqrt(3)) / 2;
                 
@@ -739,8 +749,8 @@
                 camera.lookAt(0, 0, 0);
                 camera.updateProjectionMatrix();
 
-                // 4. Ukryj siatkę konstrukcyjną i podglądy (aby nie było ich na wydruku)
-                if (gridHelper3D) gridHelper3D.visible = false;
+                // 4. Zastosuj wybraną opcję widoczności siatki oraz ukryj podglądy edycyjne
+                if (gridHelper3D) gridHelper3D.visible = shouldPrintGrid;
                 if (previewMesh) previewMesh.visible = false;
                 if (highlightMesh) highlightMesh.visible = false;
 
@@ -750,11 +760,11 @@
                 // 6. Stwórz obraz na podstawie klatki Canvas
                 const dataURL = renderer.domElement.toDataURL('image/png');
 
-                // 7. Przywróć kamerę do miejsca i kąta w którym edytowałeś, oraz pokaż siatkę
+                // 7. Przywróć kamerę do miejsca i kąta w którym edytowałeś, oraz zawsze pokaż siatkę
                 camera.position.copy(currentPos);
                 camera.quaternion.copy(currentQuat);
                 camera.updateProjectionMatrix();
-                if (gridHelper3D) gridHelper3D.visible = true;
+                if (gridHelper3D) gridHelper3D.visible = true; 
                 updatePreview();
 
                 // 8. Wstaw wygenerowany obraz do ukrytego tagu <img> i uruchom drukarkę
