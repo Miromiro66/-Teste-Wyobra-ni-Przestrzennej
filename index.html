@@ -492,10 +492,10 @@
                     <input type="checkbox" id="printGridCheckbox" style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent-gold);" checked>
                 </div>
 
-                <div class="separator"></div>
+                <div class="separator" id="separator-random"></div>
 
                 <!-- NOWOŚĆ: Losowe usuwanie -->
-                <div class="inline-control">
+                <div class="inline-control" id="randomRemovePanel">
                     <span class="count-title" title="Usuwa wybraną ilość modułów w jednym spójnym kawałku (obok siebie)">Losowe wycięcie</span>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <input type="number" id="randomRemoveCount" min="1" value="10" title="Ilość do usunięcia">
@@ -503,7 +503,7 @@
                     </div>
                 </div>
 
-                <div class="separator"></div>
+                <div class="separator" id="separator-count"></div>
 
                 <div id="blockCountPanel">
                     <span class="count-title">Stan Modułów</span>
@@ -515,6 +515,7 @@
             </div>
 
             <div id="controls">
+                <button id="studentModeBtn" style="border-color: rgba(77, 93, 255, 0.4); color: #b3baff;">🎓 Tryb Ucznia: <strong>WYŁĄCZONY</strong></button>
                 <button id="rotateModeBtn" class="active-mode">Obróć (Domyślne)</button>
                 <button id="addModeBtn">Dodaj Moduł</button>
                 <button id="removeModeBtn">Usuń Moduł</button>
@@ -546,6 +547,7 @@
                 <li><strong>Usuń Moduł:</strong> Kliknij na dowolny klocek stacji, aby go zdemontować.</li>
                 <li><strong>Widoczność Siatki:</strong> Włącza lub wyłącza linie pomocnicze (przydatne do podziwiania gotowego modelu).</li>
                 <li><strong>Losowe Wycięcie:</strong> Wpisz ilość klocków i kliknij "Usuń", by błyskawicznie usunąć spójną grupę klocków (tworząc wyrwę/brakujący kawałek jak w klasycznych testach przestrzennych).</li>
+                <li><strong>Tryb Ucznia:</strong> Przycisk ukrywa licznik modułów oraz funkcję losowego wycinania. Przydatne, gdy dziecko ma samodzielnie policzyć klocki.</li>
                 <li><strong>Drukuj Projekt:</strong> Tworzy idealnie dopasowany do kartki, płaski zrzut ekranu (na białym tle), z siatką lub bez.</li>
             </ul>
         </div>
@@ -710,6 +712,7 @@
             setupBlockColorPicker();
             setupModal();
             setupRandomRemove();
+            setupStudentMode();
             
             // Ustawienie nasłuchiwacza na checkbox widoczności siatki
             const showGridCheckbox = document.getElementById('showGridCheckbox');
@@ -740,6 +743,39 @@
             // Zamykanie modali kliknięciem w ciemne tło poza oknem
             window.addEventListener('click', (e) => {
                 if(e.target === helpModal) helpModal.style.display = 'none';
+            });
+        }
+
+        function setupStudentMode() {
+            const studentModeBtn = document.getElementById('studentModeBtn');
+            const randomRemovePanel = document.getElementById('randomRemovePanel');
+            const blockCountPanel = document.getElementById('blockCountPanel');
+            const separatorRandom = document.getElementById('separator-random');
+            const separatorCount = document.getElementById('separator-count');
+
+            let isStudentMode = false;
+
+            studentModeBtn.addEventListener('click', () => {
+                isStudentMode = !isStudentMode;
+                if (isStudentMode) {
+                    studentModeBtn.innerHTML = '🎓 Tryb Ucznia: <strong>WŁĄCZONY</strong>';
+                    studentModeBtn.classList.add('active-mode');
+                    
+                    // Ukryj sekcje z pomocą i licznikami
+                    randomRemovePanel.style.display = 'none';
+                    blockCountPanel.style.display = 'none';
+                    separatorRandom.style.display = 'none';
+                    separatorCount.style.display = 'none';
+                } else {
+                    studentModeBtn.innerHTML = '🎓 Tryb Ucznia: <strong>WYŁĄCZONY</strong>';
+                    studentModeBtn.classList.remove('active-mode');
+                    
+                    // Pokaż sekcje z pomocą i licznikami
+                    randomRemovePanel.style.display = 'flex';
+                    blockCountPanel.style.display = 'flex';
+                    separatorRandom.style.display = 'block';
+                    separatorCount.style.display = 'block';
+                }
             });
         }
 
@@ -1270,9 +1306,8 @@
                         const intersectedObject = intersection.object;
                         const gridPos = intersectedObject.userData.gridPos;
                         
+                        // Używamy lokalnego wektora normalnego ścianki, bez przeliczania na rotację całego obiektu
                         const normal = intersection.face.normal.clone();
-                        const tempMatrix = new THREE.Matrix4().extractRotation( intersectedObject.matrixWorld );
-                        normal.applyMatrix4( tempMatrix ).normalize();
 
                         const newX = gridPos.x + Math.round(normal.x);
                         const newY = gridPos.y + Math.round(normal.y);
@@ -1316,9 +1351,8 @@
                         const intersectedObject = intersection.object;
                         const gridPos = intersectedObject.userData.gridPos;
                         
+                        // Używamy lokalnego wektora normalnego ścianki
                         const normal = intersection.face.normal.clone();
-                        const tempMatrix = new THREE.Matrix4().extractRotation( intersectedObject.matrixWorld );
-                        normal.applyMatrix4( tempMatrix ).normalize();
 
                         const newX = gridPos.x + Math.round(normal.x);
                         const newY = gridPos.y + Math.round(normal.y);
