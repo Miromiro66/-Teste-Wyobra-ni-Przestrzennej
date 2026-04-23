@@ -205,9 +205,14 @@
 
         /* Konfiguracja wydruku (aktywuje się tylko podczas drukowania) */
         @media print {
+            @page {
+                size: auto;
+                margin: 1cm; /* Margines dla papieru */
+            }
             body {
                 background: white !important;
                 color: black !important;
+                margin: 0;
             }
             /* Ukryj cały interfejs UI i obszar edycji */
             body > *:not(#printArea) {
@@ -219,11 +224,12 @@
                 justify-content: center;
                 align-items: center;
                 width: 100%;
-                height: 100vh;
+                height: 100%;
             }
             #printArea img {
                 max-width: 100%;
-                max-height: 100%;
+                max-height: 100vh;
+                object-fit: contain; /* Gwarancja braku ucinania krawędzi */
             }
         }
 
@@ -327,8 +333,8 @@
         let raycaster, mouse = new THREE.Vector2();
         
         let gridHelper3D, volumeMesh;
-        let previewMesh; // Hologram podglądu (NOWOŚĆ)
-        let highlightMesh; // Podświetlenie do usunięcia (NOWOŚĆ)
+        let previewMesh; // Hologram podglądu
+        let highlightMesh; // Podświetlenie do usunięcia
         
         let dragStartMousePosition = { x: 0, y: 0 }; 
         let previousMousePosition = { x: 0, y: 0 }; 
@@ -380,11 +386,10 @@
             cubeGroup.add(volumeMesh);
         }
 
-        // Siatka 3D - ciemnoniebieska
+        // Siatka 3D
         function create3DGridHelper() {
             if (gridHelper3D) { cubeGroup.remove(gridHelper3D); gridHelper3D.geometry.dispose(); gridHelper3D.material.dispose(); }
             const points = [];
-            // Zmieniono na dynamiczny kolor i zwiększono nieprzezroczystość (opacity: 0.6)
             const material = new THREE.LineBasicMaterial({ color: currentGridColor, transparent: true, opacity: 0.6 });
 
             const startCoord = START_POS - TOTAL_BLOCK_SIZE / 2;
@@ -403,23 +408,22 @@
             cubeGroup.add(gridHelper3D);
         }
 
-        // NOWOŚĆ: Hologram podglądu klocka (Dodawanie)
+        // Hologram podglądu klocka (Dodawanie)
         function createPreviewMesh() {
             const geo = new THREE.BoxGeometry(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE);
             const mat = new THREE.MeshBasicMaterial({ color: currentBlockColor, transparent: true, opacity: 0.4, wireframe: false });
             previewMesh = new THREE.Mesh(geo, mat);
             previewMesh.visible = false;
             
-            // Krawędzie podglądu
             const edges = new THREE.EdgesGeometry(geo);
             const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 }));
             previewMesh.add(line);
             cubeGroup.add(previewMesh);
         }
 
-        // NOWOŚĆ: Podświetlenie klocka (Usuwanie)
+        // Podświetlenie klocka (Usuwanie)
         function createHighlightMesh() {
-            const geo = new THREE.BoxGeometry(CUBE_SIZE + 0.05, CUBE_SIZE + 0.05, CUBE_SIZE + 0.05); // Trochę większy
+            const geo = new THREE.BoxGeometry(CUBE_SIZE + 0.05, CUBE_SIZE + 0.05, CUBE_SIZE + 0.05); 
             const mat = new THREE.MeshBasicMaterial({ color: 0xff4d4d, transparent: true, opacity: 0.5, wireframe: false });
             highlightMesh = new THREE.Mesh(geo, mat);
             highlightMesh.visible = false;
@@ -433,9 +437,9 @@
 
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
             
-            // Renderer z obsługą High-DPI i możliwością robienia zrzutów ekranu (preserveDrawingBuffer)
+            // Renderer z obsługą High-DPI i możliwością druku
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-            renderer.setPixelRatio(window.devicePixelRatio); // Ostrzejsza grafika
+            renderer.setPixelRatio(window.devicePixelRatio); 
             renderer.setSize(container.clientWidth, container.clientHeight);
             container.appendChild(renderer.domElement);
             
@@ -495,7 +499,6 @@
                 if (previewMesh) {
                     previewMesh.material.color.set(currentBlockColor);
                 }
-                // Natychmiastowa aktualizacja koloru dla wszystkich istniejących klocków
                 allBlocks.forEach(block => {
                     block.material.color.set(currentBlockColor);
                 });
@@ -511,7 +514,6 @@
             });
             const mesh = new THREE.Mesh(geometry, material);
             
-            // Wyraźne błękitne krawędzie
             const edges = new THREE.EdgesGeometry(geometry);
             const edgeMaterial = new THREE.LineBasicMaterial({ color: 0x4d5dff, transparent: true, opacity: 0.6 });
             const line = new THREE.LineSegments(edges, edgeMaterial);
@@ -529,7 +531,6 @@
             blockContainer.add(mesh);
             blockContainer.add(line);
 
-            // Animacja wejścia (skalowanie z 0)
             blockContainer.scale.set(0.01, 0.01, 0.01);
             let scale = 0;
             const grow = () => {
@@ -583,7 +584,7 @@
 
                 blockMap.delete(key);
                 updateBlockCountDisplay(); 
-                updatePreview(); // Ukryj podświetlenie po usunięciu
+                updatePreview(); 
             }
         }
 
@@ -593,12 +594,11 @@
                 const block = createBlock(x, y, z);
                 cubeGroup.add(block);
                 updateBlockCountDisplay(); 
-                updatePreview(); // Odśwież podgląd, bo pole jest już zajęte
+                updatePreview(); 
             }
         }
         
         function resetModel() {
-            // Reset kolorów
             currentBlockColor = '#1e2235';
             document.getElementById('blockColorPicker').value = currentBlockColor;
             currentGridColor = '#00ffff';
@@ -697,7 +697,7 @@
                         instructions.textContent = 'Wybierz pole, aby zamontować nowy moduł.';
                         break;
                 }
-                updatePreview(); // Wymusza odświeżenie podglądu zaraz po zmianie trybu
+                updatePreview();
             }
 
             rotateBtn.addEventListener('click', () => {
@@ -719,55 +719,58 @@
             addBtn.addEventListener('click', () => updateMode('add'));
             resetBtn.addEventListener('click', resetModel); 
 
-            // Zaktualizowana obsługa drukowania z opcją siatki
+            // Obsługa drukowania - OBLICZA GRANICE RZECZYWISTEJ KONSTRUKCJI
             const printBtn = document.getElementById('printBtn');
             printBtn.addEventListener('click', () => {
-                // 1. Zapisz aktualny stan kamery
                 const currentPos = camera.position.clone();
                 const currentQuat = camera.quaternion.clone();
-
-                // Sprawdzenie wyboru użytkownika - czy drukować z siatką
                 const shouldPrintGrid = document.getElementById('printGridCheckbox').checked;
 
-                // 2. Oblicz wymaganą bezpieczną odległość, by zmieścić całą siatkę w kadrze
-                const maxDimension = GRID_SIZE * TOTAL_BLOCK_SIZE;
-                const boundingRadius = (maxDimension * Math.sqrt(3)) / 2;
+                // 1. Wyliczanie rozmiaru modelu/siatki, aby skupić na tym widok do wydruku
+                const box = new THREE.Box3();
+                if (shouldPrintGrid && gridHelper3D) {
+                    box.expandByObject(gridHelper3D);
+                } else if (allBlocks.length > 0) {
+                    allBlocks.forEach(b => box.expandByObject(b));
+                } else {
+                    box.expandByObject(volumeMesh);
+                }
+
+                const center = new THREE.Vector3();
+                box.getCenter(center);
+                const boundingRadius = box.getSize(new THREE.Vector3()).length() / 2;
                 
-                // Bierzemy mniejszy kąt z (pionowy, poziomy), by siatka na 100% nie wyszła za krawędzie
                 const vFov = camera.fov * Math.PI / 180;
                 const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
                 const minFov = Math.min(vFov, hFov);
                 
-                // Zmniejszono margines bezpieczeństwa (z 1.15 na 1.05), aby przybliżyć widok na wydruku o ok. 10%
-                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 1.05; 
+                // Ustawienie idealnego przybliżenia (mnożnik 0.9 = 10% bliżej względem perfekcyjnego marginesu)
+                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 0.9; 
 
-                // 3. Ustaw kamerę na bezpiecznej odległości, ale ZACHOWUJĄC aktualny kąt/kierunek
-                const direction = camera.position.clone().normalize();
-                if (direction.lengthSq() === 0) direction.set(1, 1, 1).normalize(); // Fallback w razie błędu
+                // ZACHOWAJ TWÓJ KĄT, ALE SKUP SIĘ NA ŚRODKU MODELU I PRZYBLIŻ
+                const direction = camera.position.clone().sub(center).normalize();
+                if (direction.lengthSq() === 0) direction.set(1, 1, 1).normalize(); 
                 
-                camera.position.copy(direction).multiplyScalar(requiredDistance);
-                camera.lookAt(0, 0, 0);
+                camera.position.copy(center).add(direction.multiplyScalar(requiredDistance));
+                camera.lookAt(center);
                 camera.updateProjectionMatrix();
 
-                // 4. Zastosuj wybraną opcję widoczności siatki oraz ukryj podglądy edycyjne
+                // 2. Ukryj niepotrzebne UI z canvasa przed zrobieniem zdjęcia
                 if (gridHelper3D) gridHelper3D.visible = shouldPrintGrid;
                 if (previewMesh) previewMesh.visible = false;
                 if (highlightMesh) highlightMesh.visible = false;
 
-                // 5. Wyrenderuj czystą scenę ze zaktualizowanego widoku
                 renderer.render(scene, camera);
-
-                // 6. Stwórz obraz na podstawie klatki Canvas
                 const dataURL = renderer.domElement.toDataURL('image/png');
 
-                // 7. Przywróć kamerę do miejsca i kąta w którym edytowałeś, oraz zawsze pokaż siatkę
+                // 3. Przywróć wszystko dla użytkownika
                 camera.position.copy(currentPos);
                 camera.quaternion.copy(currentQuat);
                 camera.updateProjectionMatrix();
                 if (gridHelper3D) gridHelper3D.visible = true; 
                 updatePreview();
 
-                // 8. Wstaw wygenerowany obraz do ukrytego tagu <img> i uruchom drukarkę
+                // 4. Załaduj zdjęcie do druku
                 const printImg = document.getElementById('printImage');
                 printImg.onload = () => {
                     window.print();
@@ -781,7 +784,6 @@
             let clientX = event.clientX;
             let clientY = event.clientY;
             
-            // Fallback dla starszych urządzeń touch
             if (event.touches && event.touches.length > 0) {
                 clientX = event.touches[0].clientX;
                 clientY = event.touches[0].clientY;
@@ -830,7 +832,6 @@
             const coords = getPointerCoordinates(event);
             setNormalizedMouse(coords.x, coords.y);
 
-            // LOGIKA OBRACANIA (Tylko jeśli przeciągamy)
             if (isDragging && isRotationEnabled) {
                 const deltaX = coords.x - previousMousePosition.x;
                 const deltaY = coords.y - previousMousePosition.y;
@@ -841,19 +842,16 @@
                 previousMousePosition.x = coords.x;
                 previousMousePosition.y = coords.y;
                 
-                // Ukrywamy podglądy podczas obracania by nie rozpraszały
                 previewMesh.visible = false;
                 highlightMesh.visible = false;
-                return; // Nie wyliczaj podglądu podczas przeciągania
+                return; 
             }
 
-            // LOGIKA PODGLĄDU (Kiedy mysz "unosi" się nad canvasem bez kliknięcia)
             if (!isDragging) {
                 updatePreview();
             }
         }
 
-        // NOWOŚĆ: Funkcja aktualizująca pozycję hologramu/podświetlenia
         function updatePreview() {
             previewMesh.visible = false;
             highlightMesh.visible = false;
@@ -895,7 +893,6 @@
                         }
                     }
                 } else {
-                    // Pusta siatka
                     const volumeIntersects = raycaster.intersectObjects([volumeMesh]);
                     if (volumeIntersects.length > 0) {
                         const centerIndex = Math.floor((GRID_SIZE - 1) / 2);
