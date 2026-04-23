@@ -254,6 +254,19 @@
             box-shadow: 0 0 15px rgba(255, 202, 40, 0.3);
         }
 
+        /* Przycisk Pomocy/Legendy */
+        #helpBtn {
+            border-color: rgba(160, 160, 192, 0.3);
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        #helpBtn:hover {
+            background-color: rgba(160, 160, 192, 0.1);
+            border-color: var(--text-main);
+            color: var(--text-main);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
         /* Ukryty obszar do drukowania */
         #printArea {
             display: none;
@@ -263,29 +276,38 @@
         @media print {
             @page {
                 size: auto;
-                margin: 1cm; /* Margines dla papieru */
+                margin: 0; /* Całkowite usunięcie domyślnych marginesów przeglądarki */
             }
-            body {
+            html, body {
                 background: white !important;
                 color: black !important;
-                margin: 0;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100%;
+                height: 100%;
             }
             /* Ukryj cały interfejs UI i obszar edycji */
             body > *:not(#printArea) {
                 display: none !important;
             }
-            /* Pokaż tylko obraz do druku */
+            /* Absolutne pozycjonowanie, by objąć całą kartkę A4 i wyśrodkować zawartość */
             #printArea {
                 display: flex !important;
                 justify-content: center;
                 align-items: center;
+                position: absolute;
+                top: 0;
+                left: 0;
                 width: 100%;
                 height: 100%;
+                page-break-inside: avoid;
             }
             #printArea img {
-                max-width: 100%;
-                max-height: 100vh;
-                object-fit: contain; /* Gwarancja braku ucinania krawędzi */
+                max-width: 85%; /* 15% bezpiecznego marginesu po bokach */
+                max-height: 85%;
+                object-fit: contain; /* Zachowanie proporcji kostki */
+                display: block;
+                margin: auto;
             }
         }
 
@@ -300,6 +322,69 @@
             touch-action: none;
             overflow: hidden;
             position: relative;
+        }
+
+        /* Modal Legendy */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none; /* Domyślnie ukryte */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh; /* Zabezpieczenie przed ucięciem na małym ekranie */
+            overflow-y: auto; /* Pozwala przewijać treść modalu, jeśli jest za długi */
+            margin: auto;
+            position: relative;
+        }
+
+        .modal-content h2 {
+            margin: 0 0 10px 0;
+            font-family: 'Orbitron', sans-serif;
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .modal-content ul {
+            padding-left: 20px;
+            line-height: 1.8;
+            font-size: 0.95rem;
+            color: #d0d0e0;
+        }
+
+        .modal-content li {
+            margin-bottom: 12px;
+        }
+
+        .modal-content li strong {
+            color: var(--text-main);
+        }
+
+        /* Krzyżyk do zamykania modalu w prawym górnym rogu */
+        .close-x {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 2rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            user-select: none;
+        }
+
+        .close-x:hover {
+            color: var(--accent-red);
+            transform: scale(1.1);
         }
 
         /* Responsywność dla mniejszych ekranów (smartfony) */
@@ -372,6 +457,14 @@
                     <input type="color" id="gridColorPicker" value="#00ffff">
                 </div>
 
+                <div class="separator"></div>
+
+                <!-- Wybór czy pokazywać siatkę na ekranie -->
+                <div class="inline-control">
+                    <label for="showGridCheckbox" class="count-title" style="cursor: pointer; margin: 0;">Widoczność Siatki</label>
+                    <input type="checkbox" id="showGridCheckbox" style="width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent-blue);" checked>
+                </div>
+
                 <!-- Wybór czy drukować siatkę -->
                 <div class="inline-control">
                     <label for="printGridCheckbox" class="count-title" style="cursor: pointer; margin: 0;">Drukuj Siatkę</label>
@@ -395,6 +488,7 @@
                 <button id="removeModeBtn">Usuń Moduł</button>
                 <button id="resetModelBtn">Resetuj Model</button>
                 <button id="printBtn">Drukuj Projekt</button>
+                <button id="helpBtn">📖 Jak korzystać?</button>
             </div>
         </div>
 
@@ -405,6 +499,23 @@
     <!-- Ukryty kontener, z którego pobierany jest obraz do druku -->
     <div id="printArea">
         <img id="printImage" src="" alt="Wydruk Twojego projektu">
+    </div>
+
+    <!-- Modal z Legendą / Pomocą -->
+    <div id="helpModal" class="modal-overlay">
+        <div class="glass-panel modal-content">
+            <div id="closeHelpX" class="close-x">&times;</div>
+            <h2 style="margin-top: 5px;">📖 Jak korzystać?</h2>
+            <div class="separator"></div>
+            <ul>
+                <li><strong>Rozmiar Sektora:</strong> Zmienia wielkość przestrzeni roboczej. <em>Uwaga: zmiana resetuje model!</em></li>
+                <li><strong>Obróć:</strong> Tryb nawigacji. Przeciągnij wskaźnikiem po płótnie, aby obrócić stację, oraz użyj kółka myszy do przybliżania/oddalania.</li>
+                <li><strong>Dodaj Moduł:</strong> Kliknij na puste pole lub ścianę istniejącego klocka, aby dobudować nowy moduł w wybranym kolorze.</li>
+                <li><strong>Usuń Moduł:</strong> Kliknij na dowolny klocek stacji, aby go zdemontować.</li>
+                <li><strong>Widoczność Siatki:</strong> Włącza lub wyłącza linie pomocnicze (przydatne do podziwiania gotowego modelu).</li>
+                <li><strong>Drukuj Projekt:</strong> Tworzy idealnie dopasowany do kartki, płaski zrzut ekranu (na białym tle), z siatką lub bez.</li>
+            </ul>
+        </div>
     </div>
 
     <script>
@@ -489,6 +600,9 @@
                 }
             }
             gridHelper3D = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points), material);
+            
+            // Aplikacja opcji wyświetlania z checkboxa
+            gridHelper3D.visible = document.getElementById('showGridCheckbox').checked;
             cubeGroup.add(gridHelper3D);
         }
 
@@ -553,9 +667,38 @@
             setupSizeSelector(); 
             setupGridColorPicker();
             setupBlockColorPicker();
+            setupModal();
             
+            // Ustawienie nasłuchiwacza na checkbox widoczności siatki
+            const showGridCheckbox = document.getElementById('showGridCheckbox');
+            showGridCheckbox.addEventListener('change', (e) => {
+                if (gridHelper3D) {
+                    gridHelper3D.visible = e.target.checked;
+                }
+            });
+
             animate();
             window.addEventListener('resize', onWindowResize, false);
+        }
+
+        function setupModal() {
+            const helpModal = document.getElementById('helpModal');
+            const helpBtn = document.getElementById('helpBtn');
+            const closeHelpX = document.getElementById('closeHelpX');
+
+            // Otwieranie modalu pomocy
+            helpBtn.addEventListener('click', () => {
+                helpModal.style.display = 'flex';
+            });
+
+            // Zamykanie modalu (krzyżykiem na górze)
+            const closeHelp = () => { helpModal.style.display = 'none'; };
+            closeHelpX.addEventListener('click', closeHelp);
+
+            // Zamykanie modali kliknięciem w ciemne tło poza oknem
+            window.addEventListener('click', (e) => {
+                if(e.target === helpModal) helpModal.style.display = 'none';
+            });
         }
 
         function setupSizeSelector() {
@@ -853,7 +996,10 @@
                 camera.position.copy(currentPos);
                 camera.quaternion.copy(currentQuat);
                 camera.updateProjectionMatrix();
-                if (gridHelper3D) gridHelper3D.visible = true; 
+                
+                // Powrót do widoczności siatki zdefiniowanej w UI
+                const shouldShowGrid = document.getElementById('showGridCheckbox').checked;
+                if (gridHelper3D) gridHelper3D.visible = shouldShowGrid; 
                 updatePreview();
 
                 // 8. Wstaw wygenerowany obraz do ukrytego tagu <img> i uruchom drukarkę
