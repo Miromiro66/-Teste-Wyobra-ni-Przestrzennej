@@ -738,8 +738,8 @@
                 const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
                 const minFov = Math.min(vFov, hFov);
                 
-                // Dodajemy dodatkowy 15% margines bezpieczeństwa
-                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 1.15; 
+                // Zmniejszono margines bezpieczeństwa (z 1.15 na 1.05), aby przybliżyć widok na wydruku o ok. 10%
+                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 1.05; 
 
                 // 3. Ustaw kamerę na bezpiecznej odległości, ale ZACHOWUJĄC aktualny kąt/kierunek
                 const direction = camera.position.clone().normalize();
