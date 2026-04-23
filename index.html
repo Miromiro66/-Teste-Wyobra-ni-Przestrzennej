@@ -711,41 +711,54 @@
             addBtn.addEventListener('click', () => updateMode('add'));
             resetBtn.addEventListener('click', resetModel); 
 
-            // Obsługa drukowania (niezależnie od aktualnego widoku)
+            // Zaktualizowana obsługa drukowania
             const printBtn = document.getElementById('printBtn');
             printBtn.addEventListener('click', () => {
-                // 1. Zapisz aktualny stan kamery, aby móc do niego wrócić
+                // 1. Zapisz aktualny stan kamery
                 const currentPos = camera.position.clone();
                 const currentQuat = camera.quaternion.clone();
 
-                // 2. Ustaw idealny, stały "izometryczny" widok do druku
-                const printDistance = GRID_SIZE * 2.2;
-                camera.position.set(printDistance, printDistance * 0.8, printDistance * 1.5);
+                // 2. Oblicz wymaganą bezpieczną odległość, by zmieścić całą siatkę w kadrze
+                // bazując na wielkości największej przekątnej (bounding sphere)
+                const maxDimension = GRID_SIZE * TOTAL_BLOCK_SIZE;
+                const boundingRadius = (maxDimension * Math.sqrt(3)) / 2;
+                
+                // Bierzemy mniejszy kąt z (pionowy, poziomy), by siatka na 100% nie wyszła za krawędzie
+                const vFov = camera.fov * Math.PI / 180;
+                const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+                const minFov = Math.min(vFov, hFov);
+                
+                // Dodajemy dodatkowy 15% margines bezpieczeństwa
+                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 1.15; 
+
+                // 3. Ustaw kamerę na bezpiecznej odległości, ale ZACHOWUJĄC aktualny kąt/kierunek
+                const direction = camera.position.clone().normalize();
+                if (direction.lengthSq() === 0) direction.set(1, 1, 1).normalize(); // Fallback w razie błędu
+                
+                camera.position.copy(direction).multiplyScalar(requiredDistance);
                 camera.lookAt(0, 0, 0);
                 camera.updateProjectionMatrix();
 
-                // 3. Ukryj siatkę konstrukcyjną i podglądy (aby nie było ich na wydruku)
+                // 4. Ukryj siatkę konstrukcyjną i podglądy (aby nie było ich na wydruku)
                 if (gridHelper3D) gridHelper3D.visible = false;
                 if (previewMesh) previewMesh.visible = false;
                 if (highlightMesh) highlightMesh.visible = false;
 
-                // 4. Wyrenderuj czystą scenę ze stałego widoku
+                // 5. Wyrenderuj czystą scenę ze zaktualizowanego widoku
                 renderer.render(scene, camera);
 
-                // 5. Stwórz obraz na podstawie klatki Canvas
+                // 6. Stwórz obraz na podstawie klatki Canvas
                 const dataURL = renderer.domElement.toDataURL('image/png');
 
-                // 6. Przywróć kamerę do miejsca, w którym edytowałeś i pokaż siatkę
+                // 7. Przywróć kamerę do miejsca i kąta w którym edytowałeś, oraz pokaż siatkę
                 camera.position.copy(currentPos);
                 camera.quaternion.copy(currentQuat);
                 camera.updateProjectionMatrix();
                 if (gridHelper3D) gridHelper3D.visible = true;
                 updatePreview();
 
-                // 7. Wstaw wygenerowany obraz do ukrytego tagu <img>
+                // 8. Wstaw wygenerowany obraz do ukrytego tagu <img> i uruchom drukarkę
                 const printImg = document.getElementById('printImage');
-                
-                // Uruchom systemowe okno drukowania, gdy przeglądarka załaduje obraz do DOM
                 printImg.onload = () => {
                     window.print();
                 };
