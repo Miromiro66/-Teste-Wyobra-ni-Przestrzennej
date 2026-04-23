@@ -35,6 +35,26 @@
             user-select: none;
         }
 
+        /* Podpis Projektanta (Mały i schludny na dole canvasu) */
+        .designer-credit {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.25);
+            z-index: 100;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            pointer-events: none; /* Nie blokuje klikania w kostkę */
+        }
+
+        .designer-credit strong {
+            color: rgba(255, 202, 40, 0.4);
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+
         /* Nagłówek */
         h1 {
             font-family: 'Orbitron', sans-serif;
@@ -327,6 +347,7 @@
             }
             /* Ukryj cały interfejs UI */
             body > *:not(#printArea) { display: none !important; }
+            .designer-credit { display: none !important; }
             
             /* Stylizacja samego papieru */
             #printArea {
@@ -382,7 +403,7 @@
             }
             #printImage { 
                 max-width: 100%; 
-                max-height: 55vh; 
+                max-height: 65vh; /* Zwiększone z 55vh, by kostka zajmowała więcej miejsca na kartce */
                 object-fit: contain; 
             }
             
@@ -398,6 +419,16 @@
                 font-weight: 600; 
                 color: #4b5563 !important; 
                 font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+            
+            /* Podpis projektanta na wydruku */
+            .print-designer-credit {
+                text-align: center;
+                font-size: 0.6rem;
+                color: #9ca3af !important;
+                margin-top: 10px;
                 text-transform: uppercase;
                 letter-spacing: 1px;
             }
@@ -455,46 +486,41 @@
         .modal-content li { margin-bottom: 12px; }
         .modal-content li strong { color: var(--text-main); }
 
-        /* Nowe flagi językowe (Neonowe Półkwadraty) */
-        .flags-pill-container {
+        /* Flagi językowe */
+        .flags-container {
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            padding: 8px 18px;
-            background-color: var(--bg-deep);
-            border: 2px solid #9d4edd; 
-            border-radius: 50px; 
-            box-shadow: 0 0 10px rgba(157, 78, 221, 0.2);
-            margin-top: 5px;
+            gap: 12px;
+            margin-top: 8px;
         }
         
         .flag-btn-round {
-            width: 45px;
-            height: 45px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            border: 3px solid transparent;
+            border: 2px solid transparent;
             cursor: pointer;
             transition: all 0.3s ease;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
             padding: 0;
-            background-color: #2c2f48;
+            background-color: transparent;
             opacity: 0.5; 
             outline: none;
         }
 
         .flag-btn-round:hover {
             opacity: 0.8;
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
         .flag-btn-round.active-flag {
             border-color: #00e5ff; 
-            box-shadow: 0 0 15px #00e5ff, inset 0 0 5px #00e5ff;
+            box-shadow: 0 0 10px #00e5ff;
             opacity: 1;
-            transform: scale(1.1);
+            transform: scale(1.15);
         }
 
         /* Krzyżyk do zamykania modalu */
@@ -535,8 +561,9 @@
         <!-- Lewy pasek boczny -->
         <div class="sidebar">
             <div class="glass-panel">
+                <!-- Wybór języka -->
                 <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                    <div class="flags-pill-container">
+                    <div class="flags-container">
                         <button class="flag-btn-round" data-lang="pl" style="background-image: url('https://flagcdn.com/w80/pl.png');" title="Polski"></button>
                         <button class="flag-btn-round" data-lang="is" style="background-image: url('https://flagcdn.com/w80/is.png');" title="Íslenska"></button>
                         <button class="flag-btn-round" data-lang="en" style="background-image: url('https://flagcdn.com/w80/gb.png');" title="English"></button>
@@ -623,10 +650,13 @@
         </div>
 
         <!-- Prawy obszar na Canvas -->
-        <div id="container"></div>
+        <div id="container">
+            <!-- Podpis projektanta (Dół obszaru roboczego) -->
+            <div class="designer-credit" data-i18n="designer">Projektant Aplikacji: <strong>Mirosław Józef Miras</strong></div>
+        </div>
     </div>
 
-    <!-- NOWOŚĆ: Okienko konfiguracji wydruku -->
+    <!-- Okienko konfiguracji wydruku -->
     <div id="printSetupModal" class="modal-overlay">
         <div class="glass-panel modal-content">
             <div id="closePrintX" class="close-x">&times;</div>
@@ -655,7 +685,7 @@
         </div>
     </div>
 
-    <!-- Zaktualizowany obszar do drukowania (niewidoczny na ekranie, widoczny na papierze) -->
+    <!-- Obszar do drukowania (niewidoczny na ekranie, widoczny na papierze) -->
     <div id="printArea">
         <div class="print-header">
             <div>
@@ -675,6 +705,9 @@
         <div class="print-footer">
             <p data-i18n="printNotes">Miejsce na obliczenia / notatki:</p>
         </div>
+        
+        <!-- Podpis projektanta na wydruku (Sam dół kartki) -->
+        <div class="print-designer-credit" data-i18n="designer">Projektant Aplikacji: <strong>Mirosław Józef Miras</strong></div>
     </div>
 
     <!-- Modal z Legendą / Pomocą -->
@@ -745,7 +778,8 @@
                 btnCancel: "Anuluj",
                 btnConfirmPrint: "Drukuj",
                 printDate: "Data:",
-                printNotes: "Miejsce na obliczenia / notatki:"
+                printNotes: "Miejsce na obliczenia / notatki:",
+                designer: "Projektant Aplikacji: <strong>Mirosław Józef Miras</strong>"
             },
             en: {
                 languageText: "Language",
@@ -790,7 +824,8 @@
                 btnCancel: "Cancel",
                 btnConfirmPrint: "Print",
                 printDate: "Date:",
-                printNotes: "Space for calculations / notes:"
+                printNotes: "Space for calculations / notes:",
+                designer: "App Designer: <strong>Mirosław Józef Miras</strong>"
             },
             is: {
                 languageText: "Tungumál",
@@ -835,7 +870,8 @@
                 btnCancel: "Hætta við",
                 btnConfirmPrint: "Prenta",
                 printDate: "Dagsetning:",
-                printNotes: "Pláss fyrir útreikninga / glósur:"
+                printNotes: "Pláss fyrir útreikninga / glósur:",
+                designer: "Hönnuður forrits: <strong>Mirosław Józef Miras</strong>"
             }
         };
 
@@ -1120,7 +1156,9 @@
                 const vFov = camera.fov * Math.PI / 180;
                 const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
                 const minFov = Math.min(vFov, hFov);
-                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 1.05; 
+                
+                // Zmniejszono margines bezpieczeństwa (na 0.95), co dodatkowo powiększa bryłę w kadrze
+                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 0.95; 
 
                 const direction = camera.position.clone().normalize();
                 if (direction.lengthSq() === 0) direction.set(1, 1, 1).normalize(); 
