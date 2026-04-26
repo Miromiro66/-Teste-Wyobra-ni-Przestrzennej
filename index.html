@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kosmiczna Stocznia</title>
+    <title>Percepcja Orbitalna</title>
     <!-- Ładowanie biblioteki Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Czcionka Google -->
@@ -29,10 +29,20 @@
             justify-content: flex-start;
             height: 100vh;
             overflow: hidden; 
-            background: radial-gradient(circle at 50% 0%, #1e1f38 0%, var(--bg-deep) 70%);
+            background: transparent; /* Tło renderuje teraz canvas z gwiazdami */
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
             user-select: none;
+        }
+
+        /* Pole gwiazd w tle */
+        #spaceBackground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; /* Pod całym interfejsem */
         }
 
         /* Podpis Projektanta (Mały i schludny na dole canvasu) */
@@ -108,8 +118,8 @@
 
         /* Kontenery w stylu paneli UI ze zrzutu ekranu */
         .glass-panel {
-            background-color: rgba(26, 27, 46, 0.8);
-            backdrop-filter: blur(10px);
+            background-color: rgba(26, 27, 46, 0.85);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--panel-border);
             border-radius: 16px;
             padding: 20px;
@@ -345,6 +355,8 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            /* Ukryj gwiazdy w trakcie drukowania */
+            #spaceBackground { display: none !important; }
             /* Ukryj cały interfejs UI */
             body > *:not(#printArea) { display: none !important; }
             .designer-credit { display: none !important; }
@@ -403,7 +415,7 @@
             }
             #printImage { 
                 max-width: 100%; 
-                max-height: 65vh; /* Zwiększone z 55vh, by kostka zajmowała więcej miejsca na kartce */
+                max-height: 60vh; 
                 object-fit: contain; 
             }
             
@@ -434,7 +446,7 @@
             }
         }
 
-        /* Obszar Canvas 3D */
+        /* Obszar Canvas 3D (Tylko on posiada to głębokie tło) */
         #container {
             flex-grow: 1;
             height: 100%; 
@@ -553,9 +565,11 @@
     </style>
 </head>
 <body>
+    <!-- Animowane Tło Kosmosu (Efekt Warp) -->
+    <canvas id="spaceBackground"></canvas>
 
-    <h1 data-i18n="appTitle">Kosmiczna Stocznia</h1>
-    <div id="instructions" data-i18n="appSubtitle">Budowa orbitalnej stacji kosmicznej</div>
+    <h1 data-i18n="appTitle">Percepcja Orbitalna</h1>
+    <div id="instructions" data-i18n="appSubtitle">Zarządzanie modułami stacji</div>
     
     <div class="main-wrapper">
         <!-- Lewy pasek boczny -->
@@ -663,20 +677,9 @@
             <h2 style="margin-top: 5px; color: var(--accent-gold);" data-i18n="printSetupTitle">Konfiguracja Wydruku</h2>
             <div class="separator"></div>
             
-            <div class="form-group" style="margin-top: 15px;">
-                <label for="printStudentName" data-i18n="studentLabel">Imię i nazwisko ucznia</label>
-                <input type="text" id="printStudentName" autocomplete="off">
-            </div>
-            
-            <div class="form-group">
-                <label for="printTeacherName" data-i18n="teacherLabel">Imię nauczyciela / Klasa</label>
-                <input type="text" id="printTeacherName" autocomplete="off">
-            </div>
-            
-            <div class="form-group">
-                <label for="printTaskTitleInput" data-i18n="taskTitleLabel">Tytuł zadania</label>
-                <input type="text" id="printTaskTitleInput" autocomplete="off">
-            </div>
+            <p style="text-align: center; color: var(--text-muted); margin: 20px 0; font-size: 0.95rem; line-height: 1.5;" data-i18n="printManualInfo">
+                Karta pracy zostanie wygenerowana z wykropkowanym miejscem do ręcznego wpisania imienia ucznia, klasy oraz daty.
+            </p>
 
             <div style="display: flex; gap: 10px; margin-top: 25px;">
                 <button id="cancelPrintBtn" style="flex: 1; background-color: var(--panel-bg); border-color: var(--panel-border); color: var(--text-main);" data-i18n="btnCancel">Anuluj</button>
@@ -689,12 +692,12 @@
     <div id="printArea">
         <div class="print-header">
             <div>
-                <h2 class="print-title" id="displayTaskTitle">Kosmiczna Stocznia</h2>
+                <h2 class="print-title" id="displayTaskTitle">Percepcja Orbitalna</h2>
             </div>
             <div class="print-info">
-                <p><strong data-i18n="studentLabel">Uczeń:</strong> <span id="displayStudentName">...</span></p>
-                <p><strong data-i18n="teacherLabel">Nauczyciel:</strong> <span id="displayTeacherName">...</span></p>
-                <p><strong data-i18n="printDate">Data:</strong> <span id="displayDate"></span></p>
+                <p><strong data-i18n="studentLabel">Uczeń / Imię:</strong> ...........................................................</p>
+                <p><strong data-i18n="teacherLabel">Nauczyciel / Klasa:</strong> ...........................................................</p>
+                <p><strong data-i18n="printDate">Data:</strong> ...........................................................</p>
             </div>
         </div>
         
@@ -737,8 +740,8 @@
         const translations = {
             pl: {
                 languageText: "Język",
-                appTitle: "Kosmiczna Stocznia",
-                appSubtitle: "Budowa orbitalnej stacji kosmicznej",
+                appTitle: "Percepcja Orbitalna",
+                appSubtitle: "Zarządzanie modułami stacji",
                 sectorSize: "Rozmiar Sektora",
                 moduleColor: "Kolor Modułu",
                 gridColor: "Kolor Siatki",
@@ -758,9 +761,9 @@
                 btnReset: "Resetuj Model",
                 btnPrint: "Drukuj Projekt",
                 btnHelp: "📖 Jak korzystać?",
-                instRotate: "Obracaj i przybliżaj strukturę stacji.",
-                instStatic: "Tryb statyczny. Wybierz akcję inżynieryjną.",
-                instRemove: "Kliknij moduł stacji, aby go zdemontować.",
+                instRotate: "Obracaj i przybliżaj strukturę.",
+                instStatic: "Tryb statyczny. Wybierz akcję.",
+                instRemove: "Kliknij moduł, aby go usunąć.",
                 instAdd: "Wybierz pole, aby zamontować nowy moduł.",
                 helpTitle: "📖 Jak korzystać?",
                 help1: "<strong>Rozmiar Sektora:</strong> Zmienia wielkość przestrzeni roboczej. <em>Uwaga: zmiana resetuje model!</em>",
@@ -779,12 +782,13 @@
                 btnConfirmPrint: "Drukuj",
                 printDate: "Data:",
                 printNotes: "Miejsce na obliczenia / notatki:",
+                printManualInfo: "Karta pracy zostanie wygenerowana z wykropkowanym miejscem do ręcznego wpisania imienia ucznia, klasy oraz daty.",
                 designer: "Projektant Aplikacji: <strong>Mirosław Józef Miras</strong>"
             },
             en: {
                 languageText: "Language",
-                appTitle: "Space Shipyard",
-                appSubtitle: "Orbital Space Station Construction",
+                appTitle: "Orbital Perception",
+                appSubtitle: "Station Module Management",
                 sectorSize: "Sector Size",
                 moduleColor: "Module Color",
                 gridColor: "Grid Color",
@@ -804,9 +808,9 @@
                 btnReset: "Reset Model",
                 btnPrint: "Print Project",
                 btnHelp: "📖 How to use?",
-                instRotate: "Rotate and zoom the station structure.",
-                instStatic: "Static mode. Select an engineering action.",
-                instRemove: "Click a station module to dismantle it.",
+                instRotate: "Rotate and zoom the structure.",
+                instStatic: "Static mode. Select an action.",
+                instRemove: "Click a module to remove it.",
                 instAdd: "Select a spot to mount a new module.",
                 helpTitle: "📖 How to use?",
                 help1: "<strong>Sector Size:</strong> Changes the workspace size. <em>Note: changing this resets the model!</em>",
@@ -825,12 +829,13 @@
                 btnConfirmPrint: "Print",
                 printDate: "Date:",
                 printNotes: "Space for calculations / notes:",
+                printManualInfo: "The worksheet will be generated with dotted lines for manually writing the student's name, class, and date.",
                 designer: "App Designer: <strong>Mirosław Józef Miras</strong>"
             },
             is: {
                 languageText: "Tungumál",
-                appTitle: "Geimskipasmíðastöð",
-                appSubtitle: "Smíði geimstöðvar á sporbraut",
+                appTitle: "Sporbrautarskynjun",
+                appSubtitle: "Stjórnun stöðvareininga",
                 sectorSize: "Stærð svæðis",
                 moduleColor: "Litur einingar",
                 gridColor: "Litur ramma",
@@ -871,6 +876,7 @@
                 btnConfirmPrint: "Prenta",
                 printDate: "Dagsetning:",
                 printNotes: "Pláss fyrir útreikninga / glósur:",
+                printManualInfo: "Vinnublaðið verður búið til með punktalínum til að skrifa nafn nemanda, bekk og dagsetningu handvirkt.",
                 designer: "Hönnuður forrits: <strong>Mirosław Józef Miras</strong>"
             }
         };
@@ -878,7 +884,7 @@
         let appLanguage = localStorage.getItem('spatialTestLang') || 'pl';
         let isStudentMode = false;
 
-        // === GLOBALNE ZMIENNE ===
+        // === GLOBALNE ZMIENNE WIDOKU 3D ===
         let scene, camera, renderer, cubeGroup;
         let isDragging = false;
         let isRotationEnabled = true; 
@@ -888,11 +894,6 @@
         let gridHelper3D, volumeMesh;
         let previewMesh; 
         let highlightMesh; 
-
-        // Zmienne do efektu gwiazd / statku kosmicznego
-        let starsMesh;
-        let starGeo;
-        let starSpeeds;
         
         let dragStartMousePosition = { x: 0, y: 0 }; 
         let previousMousePosition = { x: 0, y: 0 }; 
@@ -914,6 +915,136 @@
 
         const allBlocks = []; 
         const blockMap = new Map();
+
+        // === SKRYPT DLA ANIMOWANEGO TŁA KOSMOSU ===
+        function initStarfield() {
+            const canvas = document.getElementById('spaceBackground');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            const stars = [];
+            const numStars = 800; // Ilość gwiazd
+            const speed = 3; // Prędkość lotu
+
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // Generowanie startowych gwiazd
+            for (let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: (Math.random() - 0.5) * 2000,
+                    y: (Math.random() - 0.5) * 2000,
+                    z: Math.random() * 2000
+                });
+            }
+
+            function drawStars() {
+                // Rysowanie ciemnego tła z gradientem dla ukrycia starego wyglądu
+                let gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height));
+                gradient.addColorStop(0, '#1e1f38');
+                gradient.addColorStop(1, '#0d0e1b');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                const cx = width / 2;
+                const cy = height / 2;
+
+                for (let i = 0; i < numStars; i++) {
+                    let star = stars[i];
+                    star.z -= speed;
+
+                    // Resetowanie gwiazdy, gdy minie kamerę
+                    if (star.z <= 0) {
+                        star.x = (Math.random() - 0.5) * 2000;
+                        star.y = (Math.random() - 0.5) * 2000;
+                        star.z = 2000;
+                    }
+
+                    // Obliczenia perspektywy dla widoku 3D -> 2D
+                    const px = cx + (star.x / star.z) * 800;
+                    const py = cy + (star.y / star.z) * 800;
+                    
+                    // Poprzednia pozycja gwiazdy dla rysowania smug przelotu (Warp Effect)
+                    const pxPrev = cx + (star.x / (star.z + speed)) * 800;
+                    const pyPrev = cy + (star.y / (star.z + speed)) * 800;
+
+                    const zRatio = 1 - (star.z / 2000);
+                    
+                    // Rysowanie gwiaździstej smugi na ekranie
+                    if (px >= 0 && px <= width && py >= 0 && py <= height) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${zRatio})`;
+                        ctx.lineWidth = zRatio * 2;
+                        ctx.moveTo(pxPrev, pyPrev);
+                        ctx.lineTo(px, py);
+                        ctx.stroke();
+                    }
+                }
+                requestAnimationFrame(drawStars);
+            }
+            drawStars();
+        }
+
+        // === GŁÓWNA INICJALIZACJA ===
+        function init() {
+            // Uruchomienie tła w kosmosie
+            initStarfield();
+
+            const container = document.getElementById('container');
+            
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+            renderer.setPixelRatio(window.devicePixelRatio); 
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            
+            raycaster = new THREE.Raycaster();
+            cubeGroup = new THREE.Group();
+            scene.add(cubeGroup);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); 
+            directionalLight.position.set(10, 10, 10);
+            scene.add(directionalLight);
+
+            document.getElementById('gridColorPicker').value = currentGridColor;
+            document.getElementById('blockColorPicker').value = currentBlockColor;
+
+            calculateDimensions();
+            createVolumeMesh();
+            create3DGridHelper();
+            createPreviewMesh();
+            createHighlightMesh();
+            createInitialBlocks();
+
+            setupControls(container);
+            setupLanguageSelect();
+            setupModeButtons();
+            setupSizeSelector(); 
+            setupGridColorPicker();
+            setupBlockColorPicker();
+            setupModals();
+            setupRandomRemove();
+            setupStudentMode();
+            
+            updateLanguage();
+
+            const showGridCheckbox = document.getElementById('showGridCheckbox');
+            showGridCheckbox.addEventListener('change', (e) => {
+                if (gridHelper3D) { gridHelper3D.visible = e.target.checked; }
+            });
+
+            animate();
+            window.addEventListener('resize', onWindowResize, false);
+        }
 
         function calculateDimensions() {
             MAX_BLOCKS = GRID_SIZE * GRID_SIZE * GRID_SIZE;
@@ -982,114 +1113,6 @@
             cubeGroup.add(highlightMesh);
         }
 
-        // Funkcja tworząca system cząsteczek udających lecące gwiazdy (Warp Effect)
-        function createStarfield() {
-            const starCount = 3000;
-            starGeo = new THREE.BufferGeometry();
-            const starPositions = new Float32Array(starCount * 3);
-            starSpeeds = new Float32Array(starCount);
-
-            for (let i = 0; i < starCount; i++) {
-                starPositions[i * 3] = (Math.random() - 0.5) * 800;     // Oś X
-                starPositions[i * 3 + 1] = (Math.random() - 0.5) * 800; // Oś Y
-                starPositions[i * 3 + 2] = - (Math.random() * 800);     // Oś Z (Przed kamerą do daleka)
-                
-                // Losowa prędkość każdej gwiazdy
-                starSpeeds[i] = 0.3 + Math.random() * 1.5;
-            }
-
-            starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-
-            const starMaterial = new THREE.PointsMaterial({
-                color: 0xaaccff, // Delikatnie błękitny, kosmiczny pył/gwiazdy
-                size: 0.8,
-                transparent: true,
-                opacity: 0.8
-            });
-
-            starsMesh = new THREE.Points(starGeo, starMaterial);
-            
-            // Konieczne jest dodanie kamery do sceny, by jej dzieci były widoczne i renderowane
-            scene.add(camera);
-            // Dodajemy system cząsteczek BEZPOŚREDNIO do kamery - 
-            // dzięki temu gdy manipulujemy kostką/zoomem, kierunek lotu gwiazd 
-            // zawsze jest prosto w ekran, dając namacalne uczucie podróży!
-            camera.add(starsMesh);
-        }
-
-        // Funkcja aktualizująca lecące gwiazdy w każdej klatce renderowania
-        function animateStars() {
-            if (!starGeo) return;
-            const positions = starGeo.attributes.position.array;
-            for (let i = 0; i < starSpeeds.length; i++) {
-                // Ruch po lokalnej osi Z (w stronę kamery)
-                positions[i * 3 + 2] += starSpeeds[i];
-                
-                // Kiedy gwiazda wyleci "za nas" (za ekran), cofamy ją głęboko do przodu
-                if (positions[i * 3 + 2] > 50) {
-                    positions[i * 3 + 2] = -800;
-                    // Przy okazji losujemy nowe X i Y, by uniknąć powtarzalnych wzorów
-                    positions[i * 3] = (Math.random() - 0.5) * 800;
-                    positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
-                }
-            }
-            // Zgłoszenie karcie graficznej że koordynaty się zmieniły
-            starGeo.attributes.position.needsUpdate = true;
-        }
-
-        function init() {
-            const container = document.getElementById('container');
-            
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2000);
-            
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-            renderer.setPixelRatio(window.devicePixelRatio); 
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            container.appendChild(renderer.domElement);
-            
-            raycaster = new THREE.Raycaster();
-            cubeGroup = new THREE.Group();
-            scene.add(cubeGroup);
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
-            scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8); 
-            directionalLight.position.set(10, 10, 10);
-            scene.add(directionalLight);
-
-            document.getElementById('gridColorPicker').value = currentGridColor;
-            document.getElementById('blockColorPicker').value = currentBlockColor;
-
-            calculateDimensions();
-            createStarfield(); // Uruchomienie efektu gwiezdnego pyłu
-            createVolumeMesh();
-            create3DGridHelper();
-            createPreviewMesh();
-            createHighlightMesh();
-            createInitialBlocks();
-
-            setupControls(container);
-            setupLanguageSelect();
-            setupModeButtons();
-            setupSizeSelector(); 
-            setupGridColorPicker();
-            setupBlockColorPicker();
-            setupModals();
-            setupRandomRemove();
-            setupStudentMode();
-            
-            updateLanguage();
-
-            const showGridCheckbox = document.getElementById('showGridCheckbox');
-            showGridCheckbox.addEventListener('change', (e) => {
-                if (gridHelper3D) { gridHelper3D.visible = e.target.checked; }
-            });
-
-            animate();
-            window.addEventListener('resize', onWindowResize, false);
-        }
-
         // === SYSTEM JĘZYKOWY ===
         function setupLanguageSelect() {
             const flagBtns = document.querySelectorAll('.flag-btn-round');
@@ -1119,9 +1142,6 @@
 
             document.getElementById('randomRemoveLabel').title = t.randomRemoveTooltip;
             document.getElementById('randomRemoveCount').title = t.randomRemoveCountTooltip;
-            
-            // Tłumaczenie placeholdera w formularzu drukowania
-            document.getElementById('printTaskTitleInput').placeholder = t.appTitle;
 
             updateInstructionText();
             updateStudentModeUI();
@@ -1194,17 +1214,6 @@
             confirmPrintBtn.addEventListener('click', () => {
                 printSetupModal.style.display = 'none';
 
-                // Pobranie danych z formularza
-                const studentName = document.getElementById('printStudentName').value || "...";
-                const teacherName = document.getElementById('printTeacherName').value || "...";
-                const taskTitle = document.getElementById('printTaskTitleInput').value || translations[appLanguage].appTitle;
-                
-                // Uzupełnienie danych na niewidocznej kartce do druku
-                document.getElementById('displayStudentName').textContent = studentName;
-                document.getElementById('displayTeacherName').textContent = teacherName;
-                document.getElementById('displayTaskTitle').textContent = taskTitle;
-                document.getElementById('displayDate').textContent = new Date().toLocaleDateString();
-
                 // Przygotowanie widoku 3D
                 const currentPos = camera.position.clone();
                 const currentQuat = camera.quaternion.clone();
@@ -1217,8 +1226,8 @@
                 const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
                 const minFov = Math.min(vFov, hFov);
                 
-                // Zmniejszono margines bezpieczeństwa (na 0.95), co dodatkowo powiększa bryłę w kadrze
-                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 0.95; 
+                // Mnożnik zmieniony z 0.95 na 1.3 - gwarantuje to, że ucięta bryła zmieści się w całości w kadrze
+                const requiredDistance = (boundingRadius / Math.sin(minFov / 2)) * 1.3; 
 
                 const direction = camera.position.clone().normalize();
                 if (direction.lengthSq() === 0) direction.set(1, 1, 1).normalize(); 
@@ -1227,23 +1236,19 @@
                 camera.lookAt(0, 0, 0);
                 camera.updateProjectionMatrix();
 
-                // Przygotowanie sceny do zdjęcia - usuwamy robocze kontrolki i gwiazdy (zepsułyby białe tło wydruku)
                 if (gridHelper3D) gridHelper3D.visible = shouldPrintGrid;
                 if (previewMesh) previewMesh.visible = false;
                 if (highlightMesh) highlightMesh.visible = false;
-                if (starsMesh) starsMesh.visible = false;
 
                 renderer.render(scene, camera);
                 const dataURL = renderer.domElement.toDataURL('image/png');
 
-                // Przywracanie parametrów
                 camera.position.copy(currentPos);
                 camera.quaternion.copy(currentQuat);
                 camera.updateProjectionMatrix();
                 
                 const shouldShowGrid = document.getElementById('showGridCheckbox').checked;
                 if (gridHelper3D) gridHelper3D.visible = shouldShowGrid; 
-                if (starsMesh) starsMesh.visible = true; // Wracamy gwiazdy
                 updatePreview();
 
                 const printImg = document.getElementById('printImage');
@@ -1754,7 +1759,6 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            animateStars(); // Aktualizujemy pozycję lecących gwiazd w każdej klatce
             renderer.render(scene, camera);
         }
 
