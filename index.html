@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Wyobraźni Przestrzennej</title>
+    <title>Kosmiczna Stocznia</title>
     <!-- Ładowanie biblioteki Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Czcionka Google -->
@@ -554,8 +554,8 @@
 </head>
 <body>
 
-    <h1 data-i18n="appTitle">Test Wyobraźni Przestrzennej</h1>
-    <div id="instructions" data-i18n="appSubtitle">Zarządzanie modułami stacji</div>
+    <h1 data-i18n="appTitle">Kosmiczna Stocznia</h1>
+    <div id="instructions" data-i18n="appSubtitle">Budowa orbitalnej stacji kosmicznej</div>
     
     <div class="main-wrapper">
         <!-- Lewy pasek boczny -->
@@ -689,7 +689,7 @@
     <div id="printArea">
         <div class="print-header">
             <div>
-                <h2 class="print-title" id="displayTaskTitle">Test Wyobraźni Przestrzennej</h2>
+                <h2 class="print-title" id="displayTaskTitle">Kosmiczna Stocznia</h2>
             </div>
             <div class="print-info">
                 <p><strong data-i18n="studentLabel">Uczeń:</strong> <span id="displayStudentName">...</span></p>
@@ -737,8 +737,8 @@
         const translations = {
             pl: {
                 languageText: "Język",
-                appTitle: "Test Wyobraźni Przestrzennej",
-                appSubtitle: "Zarządzanie modułami stacji",
+                appTitle: "Kosmiczna Stocznia",
+                appSubtitle: "Budowa orbitalnej stacji kosmicznej",
                 sectorSize: "Rozmiar Sektora",
                 moduleColor: "Kolor Modułu",
                 gridColor: "Kolor Siatki",
@@ -758,9 +758,9 @@
                 btnReset: "Resetuj Model",
                 btnPrint: "Drukuj Projekt",
                 btnHelp: "📖 Jak korzystać?",
-                instRotate: "Obracaj i przybliżaj strukturę.",
-                instStatic: "Tryb statyczny. Wybierz akcję.",
-                instRemove: "Kliknij moduł, aby go usunąć.",
+                instRotate: "Obracaj i przybliżaj strukturę stacji.",
+                instStatic: "Tryb statyczny. Wybierz akcję inżynieryjną.",
+                instRemove: "Kliknij moduł stacji, aby go zdemontować.",
                 instAdd: "Wybierz pole, aby zamontować nowy moduł.",
                 helpTitle: "📖 Jak korzystać?",
                 help1: "<strong>Rozmiar Sektora:</strong> Zmienia wielkość przestrzeni roboczej. <em>Uwaga: zmiana resetuje model!</em>",
@@ -783,8 +783,8 @@
             },
             en: {
                 languageText: "Language",
-                appTitle: "Spatial Imagination Test",
-                appSubtitle: "Station Module Management",
+                appTitle: "Space Shipyard",
+                appSubtitle: "Orbital Space Station Construction",
                 sectorSize: "Sector Size",
                 moduleColor: "Module Color",
                 gridColor: "Grid Color",
@@ -804,9 +804,9 @@
                 btnReset: "Reset Model",
                 btnPrint: "Print Project",
                 btnHelp: "📖 How to use?",
-                instRotate: "Rotate and zoom the structure.",
-                instStatic: "Static mode. Select an action.",
-                instRemove: "Click a module to remove it.",
+                instRotate: "Rotate and zoom the station structure.",
+                instStatic: "Static mode. Select an engineering action.",
+                instRemove: "Click a station module to dismantle it.",
                 instAdd: "Select a spot to mount a new module.",
                 helpTitle: "📖 How to use?",
                 help1: "<strong>Sector Size:</strong> Changes the workspace size. <em>Note: changing this resets the model!</em>",
@@ -829,8 +829,8 @@
             },
             is: {
                 languageText: "Tungumál",
-                appTitle: "Próf í rýmisgreind",
-                appSubtitle: "Stjórnun stöðvareininga",
+                appTitle: "Geimskipasmíðastöð",
+                appSubtitle: "Smíði geimstöðvar á sporbraut",
                 sectorSize: "Stærð svæðis",
                 moduleColor: "Litur einingar",
                 gridColor: "Litur ramma",
@@ -888,6 +888,11 @@
         let gridHelper3D, volumeMesh;
         let previewMesh; 
         let highlightMesh; 
+
+        // Zmienne do efektu gwiazd / statku kosmicznego
+        let starsMesh;
+        let starGeo;
+        let starSpeeds;
         
         let dragStartMousePosition = { x: 0, y: 0 }; 
         let previousMousePosition = { x: 0, y: 0 }; 
@@ -977,11 +982,66 @@
             cubeGroup.add(highlightMesh);
         }
 
+        // Funkcja tworząca system cząsteczek udających lecące gwiazdy (Warp Effect)
+        function createStarfield() {
+            const starCount = 3000;
+            starGeo = new THREE.BufferGeometry();
+            const starPositions = new Float32Array(starCount * 3);
+            starSpeeds = new Float32Array(starCount);
+
+            for (let i = 0; i < starCount; i++) {
+                starPositions[i * 3] = (Math.random() - 0.5) * 800;     // Oś X
+                starPositions[i * 3 + 1] = (Math.random() - 0.5) * 800; // Oś Y
+                starPositions[i * 3 + 2] = - (Math.random() * 800);     // Oś Z (Przed kamerą do daleka)
+                
+                // Losowa prędkość każdej gwiazdy
+                starSpeeds[i] = 0.3 + Math.random() * 1.5;
+            }
+
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                color: 0xaaccff, // Delikatnie błękitny, kosmiczny pył/gwiazdy
+                size: 0.8,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            starsMesh = new THREE.Points(starGeo, starMaterial);
+            
+            // Konieczne jest dodanie kamery do sceny, by jej dzieci były widoczne i renderowane
+            scene.add(camera);
+            // Dodajemy system cząsteczek BEZPOŚREDNIO do kamery - 
+            // dzięki temu gdy manipulujemy kostką/zoomem, kierunek lotu gwiazd 
+            // zawsze jest prosto w ekran, dając namacalne uczucie podróży!
+            camera.add(starsMesh);
+        }
+
+        // Funkcja aktualizująca lecące gwiazdy w każdej klatce renderowania
+        function animateStars() {
+            if (!starGeo) return;
+            const positions = starGeo.attributes.position.array;
+            for (let i = 0; i < starSpeeds.length; i++) {
+                // Ruch po lokalnej osi Z (w stronę kamery)
+                positions[i * 3 + 2] += starSpeeds[i];
+                
+                // Kiedy gwiazda wyleci "za nas" (za ekran), cofamy ją głęboko do przodu
+                if (positions[i * 3 + 2] > 50) {
+                    positions[i * 3 + 2] = -800;
+                    // Przy okazji losujemy nowe X i Y, by uniknąć powtarzalnych wzorów
+                    positions[i * 3] = (Math.random() - 0.5) * 800;
+                    positions[i * 3 + 1] = (Math.random() - 0.5) * 800;
+                }
+            }
+            // Zgłoszenie karcie graficznej że koordynaty się zmieniły
+            starGeo.attributes.position.needsUpdate = true;
+        }
+
         function init() {
             const container = document.getElementById('container');
             
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 2000);
             
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
             renderer.setPixelRatio(window.devicePixelRatio); 
@@ -1002,6 +1062,7 @@
             document.getElementById('blockColorPicker').value = currentBlockColor;
 
             calculateDimensions();
+            createStarfield(); // Uruchomienie efektu gwiezdnego pyłu
             createVolumeMesh();
             create3DGridHelper();
             createPreviewMesh();
@@ -1121,7 +1182,6 @@
             const cancelPrintBtn = document.getElementById('cancelPrintBtn');
             const confirmPrintBtn = document.getElementById('confirmPrintBtn');
 
-            // Zastępujemy poprzedni kod drukowania z setupModeButtons tutaj
             printBtn.addEventListener('click', () => {
                 printSetupModal.style.display = 'flex';
             });
@@ -1167,19 +1227,23 @@
                 camera.lookAt(0, 0, 0);
                 camera.updateProjectionMatrix();
 
+                // Przygotowanie sceny do zdjęcia - usuwamy robocze kontrolki i gwiazdy (zepsułyby białe tło wydruku)
                 if (gridHelper3D) gridHelper3D.visible = shouldPrintGrid;
                 if (previewMesh) previewMesh.visible = false;
                 if (highlightMesh) highlightMesh.visible = false;
+                if (starsMesh) starsMesh.visible = false;
 
                 renderer.render(scene, camera);
                 const dataURL = renderer.domElement.toDataURL('image/png');
 
+                // Przywracanie parametrów
                 camera.position.copy(currentPos);
                 camera.quaternion.copy(currentQuat);
                 camera.updateProjectionMatrix();
                 
                 const shouldShowGrid = document.getElementById('showGridCheckbox').checked;
                 if (gridHelper3D) gridHelper3D.visible = shouldShowGrid; 
+                if (starsMesh) starsMesh.visible = true; // Wracamy gwiazdy
                 updatePreview();
 
                 const printImg = document.getElementById('printImage');
@@ -1690,6 +1754,7 @@
 
         function animate() {
             requestAnimationFrame(animate);
+            animateStars(); // Aktualizujemy pozycję lecących gwiazd w każdej klatce
             renderer.render(scene, camera);
         }
 
